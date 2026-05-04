@@ -1,4 +1,4 @@
-package wss.map;
+package Map;
 
 import java.util.Random;
 

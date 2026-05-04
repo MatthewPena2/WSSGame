@@ -1,4 +1,4 @@
-package wss.map;
+package Map;
 
 public class Tile {
     private final Position position;

@@ -1,4 +1,4 @@
-package wss.map;
+package Map;
 
 public class MapDemo {
     public static void main(String[] args) {
