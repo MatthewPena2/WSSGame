@@ -1,4 +1,4 @@
-package wss.map;
+package Map;
 
 import java.util.Random;
 
@@ -96,6 +96,25 @@ public class WildernessMap {
         return tiles[position.getY()][position.getX()];
     }
 
+    public Tile getTileAt(Position position) {
+        if (!isValidPosition(position)) {
+            return null;
+        }
+        return tiles[position.getY()][position.getX()];
+    }
+
+    public boolean isInBounds(Position position) {
+        return isValidPosition(position);
+    }
+
+    public void resetRepeatingBonuses() {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                tiles[y][x].resetRepeating();
+            }
+        }
+    }
+
     public boolean hasReachedEastEdge() {
         return playerPosition.getX() == width - 1;
     }
@@ -162,5 +181,59 @@ public class WildernessMap {
             return Terrain.RIVER;
         }
         return Terrain.MOUNTAIN;
+    }
+
+    private Tile generateTile(Position position, Terrain terrain) {
+        double scale = difficultyScale();
+ 
+        // Food
+        boolean hasFood = random.nextDouble() < baseFoodChance(terrain) * scale;
+        boolean foodRep = hasFood && terrain == Terrain.PLAINS && random.nextBoolean();
+ 
+        // Water — rivers always give repeating water
+        boolean waterRep = (terrain == Terrain.RIVER);
+        boolean hasWater = waterRep || random.nextDouble() < baseWaterChance(terrain) * scale;
+ 
+        // Gold — rare, never repeating
+        boolean hasGold = random.nextDouble() < 0.04 * scale;
+ 
+        // Trader — rare, always repeating (stays in their square)
+        boolean hasTrader = random.nextDouble() < 0.03 * scale;
+ 
+        return new Tile(position, terrain,
+                        hasFood,  foodRep,
+                        hasWater, waterRep,
+                        hasGold,
+                        hasTrader);
+    }
+ 
+    private double baseFoodChance(Terrain terrain) {
+        switch (terrain) {
+            case PLAINS:   return 0.20;
+            case FOREST:   return 0.25;
+            case DESERT:   return 0.05;
+            case RIVER:    return 0.15;
+            case MOUNTAIN: return 0.08;
+            default:       return 0.10;
+        }
+    }
+ 
+    private double baseWaterChance(Terrain terrain) {
+        switch (terrain) {
+            case PLAINS:   return 0.08;
+            case FOREST:   return 0.12;
+            case DESERT:   return 0.03;
+            case MOUNTAIN: return 0.10;
+            default:       return 0.05;
+        }
+    }
+ 
+    private double difficultyScale() {
+        switch (difficulty) {
+            case EASY:   return 1.0;
+            case MEDIUM: return 0.7;
+            case HARD:   return 0.4;
+            default:     return 1.0;
+        }
     }
 }

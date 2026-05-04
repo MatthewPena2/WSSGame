@@ -1,5 +1,7 @@
+import Map.WildernessMap;
+
 public class WSS {
-    private Map map;
+    private WildernessMap map;
     private Player player;
     private Difficulty difficulty;
 

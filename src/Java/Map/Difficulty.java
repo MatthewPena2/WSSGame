@@ -1,4 +1,4 @@
-package wss.map;
+package Map;
 
 public enum Difficulty {
     EASY,
