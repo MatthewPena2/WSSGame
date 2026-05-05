@@ -1,10 +1,11 @@
 package GameEntity;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class Entity {
-    protected int x, y; //position of entity on the map
-    protected int speed; //traveling speed of entity (will mainly apply to the Player)
+    public int MapX, MapY; //position of entity on the map
+    public int speed; //traveling speed of entity (will mainly apply to the Player)
     protected int entitySize; //used to draw the entity on screen (in terms of pixels)
 
     //variables used to draw the entity using png pixel art
@@ -14,4 +15,10 @@ public class Entity {
     public String direction;
     public int spriteCounter = 0;
     public int spriteNumber = 1;
+
+    //Collision Detection: Hitbox - will be applied to the player and trader
+    //If the player collides with a mountain terrain, they should not be able to pass
+    //If the player collides with a trader, trade is initiated
+    public Rectangle hitbox;
+    public boolean collisionOn = false;
 }

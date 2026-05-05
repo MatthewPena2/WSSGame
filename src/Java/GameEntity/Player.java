@@ -22,20 +22,21 @@ public class Player extends Entity{
         keyH = kHandle; //pass the key handler
         setDefaultPositionAndSpeed(); //set Player default position on the map and their speed
         getPlayerImages(); //get player pixel art
+        hitbox = new Rectangle(8, 16, 32, 32);
     }
 
     //Mutator method for position x, y and speed
     public void setDefaultPositionAndSpeed(){
-        x = 0; //x coordinate in the window
-        y = 336; //y coordinate in the window
+        MapX = 0; //x coordinate in the window
+        MapY = 336; //y coordinate in the window
         speed = 4; //speed
         entitySize = 48;
         direction = "down"; //spawned-in direction
     }
 
     //Accessor methods for player position
-    public int getPlayerXCoord(){return x;}
-    public int getPlayerYCoord(){return y;}
+    public int getPlayerXCoord(){return MapX;}
+    public int getPlayerYCoord(){return MapY;}
 
     //Update position
     public void update(){
@@ -45,16 +46,27 @@ public class Player extends Entity{
             //manage player movement
             if(keyH.pressedUp){
                 direction = "up";
-                y -= speed;
             }else if(keyH.pressedDown){
                 direction = "down";
-                y += speed;
             }else if(keyH.pressedLeft){
                 direction = "left";
-                x -= speed;
             }else if(keyH.pressedRight){
                 direction = "right";
-                x += speed;
+            }
+
+            //Check the tile collision
+            collisionOn = false;
+            gp.collChecker.checkTileCollision(this);
+
+            //if collision is false, the player can move; if on, the player cannot move
+            if(!collisionOn){
+                switch(direction){ //only allow the player to move when collision is off
+                    case "up": MapY -= speed; break;
+                    case "down": MapY += speed; break;
+                    case "right": MapX += speed; break;
+                    case "left": MapX -= speed; break;
+                }
+
             }
 
             spriteCounter++;
@@ -110,6 +122,6 @@ public class Player extends Entity{
                 break;
         }
 
-        g2.drawImage(image, x, y, entitySize, entitySize, null);
+        g2.drawImage(image, MapX, MapY, entitySize, entitySize, null);
     }
 }

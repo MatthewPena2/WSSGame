@@ -1,6 +1,7 @@
 package GameDisplay;
 
 import GameEntity.Player;
+import TileMap.WildernessMapManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,17 +13,21 @@ public class GamePanel extends JPanel implements Runnable{
     final int tileSizeInPixels = 16; //each tile, player icon, item, entity, etc. will be 16 by 16 pixels
     final int tileSizeScale = 3; //blows up the tile image to make it bigger on screen
 
-    final int tileSize = tileSizeInPixels * tileSizeScale; //16 * 3 = 48; 48 by 48
-    final int maxScreenCol = 20; //20 tiles across; 960 pixels across
-    final int maxScreenRow = 14; //14 tiles down; 672 pixels down
-    final int screenWidth = tileSize * maxScreenCol; //width is in pixels displayed on screen
-    final int screenHeight = tileSize * maxScreenRow; //height is in pixels displayed on screen
+    public final int tileSize = tileSizeInPixels * tileSizeScale; //16 * 3 = 48; 48 by 48
+    public final int maxScreenCol = 20; //20 tiles across; 960 pixels across
+    public final int maxScreenRow = 14; //14 tiles down; 672 pixels down
+    public final int screenWidth = tileSize * maxScreenCol; //width is in pixels displayed on screen
+    public final int screenHeight = tileSize * maxScreenRow; //height is in pixels displayed on screen
     //When it comes to drawing on a screen, the game panel will be using the player's position in pixels
 
     //FPS Cap = 60 FPS
     //used to tell the game panel how many times per second to update the display window (calling update()/repaint())
     int FPS = 60;
 
+    //Collision Checker (for terrain/trader)
+    public CollisionChecker collChecker = new CollisionChecker(this);
+    //Map Manager
+    WildernessMapManager tileM = new WildernessMapManager(this);
     //KeyHandler to manage user input for player action
     KeyHandler keyH = new KeyHandler();
     //gameThread thread is going to manage the uptime of the game (when the game is active)
@@ -42,7 +47,7 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public void startGameThread(){
-        gameThread = new Thread(this); //thread will be running this pannel, which has the game loop
+        gameThread = new Thread(this); //thread will be running this panel, which has the game loop
         gameThread.start(); //.start() will call run(), which is the game loop
     }
     //automatically included when implementing Runnable class; called to execute the game loop
@@ -84,6 +89,8 @@ public class GamePanel extends JPanel implements Runnable{
     public void paintComponent(Graphics g){ //uses Graphics
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D)g; //cast g as a Graphics2D variable (Graphics2D has more components than Graphics)
+        //call map manager
+        tileM.draw(g2);
         //call player draw() to draw player on the panel
         player.draw(g2);
         g2.dispose(); //when drawing is done, release any resources being used up
