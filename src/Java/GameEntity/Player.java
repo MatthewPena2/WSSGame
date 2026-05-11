@@ -2,6 +2,8 @@ package GameEntity;
 
 import GameDisplay.GamePanel;
 import GameDisplay.KeyHandler;
+import Map.PlayerType;
+
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,10 +18,13 @@ public class Player extends Entity{
 
     GamePanel gp;
     KeyHandler keyH;
+    PlayerType type;
 
-    public Player(GamePanel panel, KeyHandler kHandle){
+
+    public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
         gp = panel; //pass the game panel
         keyH = kHandle; //pass the key handler
+        this.type = selectedType;
         setDefaultPositionAndSpeed(); //set Player default position on the map and their speed
         getPlayerImages(); //get player pixel art
         hitbox = new Rectangle(8, 16, 32, 32);
@@ -32,6 +37,22 @@ public class Player extends Entity{
         speed = 4; //speed
         entitySize = 48;
         direction = "down"; //spawned-in direction
+
+        switch (type) {
+        case EXPLORER:
+            speed = 6;  // Fast movement for scouting
+            break;
+        case WARRIOR:
+            speed = 3;  // Slower because they are "heavy" or high strength
+            break;
+        case SURVIVOR:
+            speed = 4;  // Standard speed, but maybe they'll have more food later
+            break;
+        default:
+            speed = 4;
+            break;
+    }
+
     }
 
     //Accessor methods for player position
