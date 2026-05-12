@@ -1,4 +1,4 @@
-package Map;
+package GameEntity;
 
 public enum PlayerType {
     EXPLORER(100.0, 50.0, "Increased Vision range to scout the map."),

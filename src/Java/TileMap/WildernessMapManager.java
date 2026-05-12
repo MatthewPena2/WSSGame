@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+//THIS WILDERNESS MAP MANAGER SIMPLY LOADS THE MAP FROM THE tileMap.txt FILE AND DRAWS IT IN THE GAME PANEL
+//IT DOES NOT KEEP TRACK OF PLAYER MOVEMENT/MAP CONTENTS - THAT IS FOUND IN COLLISION CHECKER AND GAME PANEL
+
 public class WildernessMapManager {
     GamePanel gp;
     public Tile[] tile;
@@ -24,20 +27,28 @@ public class WildernessMapManager {
 
     public void getTileImage(){
         try{
-            tile[0] = new Tile();
-            tile[0].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_plains.png"));
+            //create new tile for each specific terrain type
+            tile[0] = new Tile(); //plains
+            tile[1] = new Tile(); //desert
+            tile[2] = new Tile(); //forest
+            tile[3] = new Tile(); //mountain
+            tile[3].collision = true; //adds collision with mountain terrain
+            tile[4] = new Tile(); //river water
 
-            tile[1] = new Tile();
+            //user tile image for plains as a test
+            var inputStream = getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_plains.png");
+            if(inputStream == null){ //if not successful, print error message
+                System.out.println("Error: could not find tile art path");
+            }else{ //else, load the tile image -- if this path works for this tile, it will work for the others
+                tile[0].image = ImageIO.read(inputStream);
+            }
+            //tile image for desert
             tile[1].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_desert.png"));
-
-            tile[2] = new Tile();
+            //tile image for forest
             tile[2].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_forest.png"));
-
-            tile[3] = new Tile();
+            //tile image for mountain
             tile[3].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_mountain.png"));
-            tile[3].collision = true;
-
-            tile[4] = new Tile();
+            //tile image for water
             tile[4].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_river_water.png"));
 
 

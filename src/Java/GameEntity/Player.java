@@ -2,7 +2,6 @@ package GameEntity;
 
 import GameDisplay.GamePanel;
 import GameDisplay.KeyHandler;
-import Map.PlayerType;
 
 
 import javax.imageio.ImageIO;
@@ -24,7 +23,7 @@ public class Player extends Entity{
     public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
         gp = panel; //pass the game panel
         keyH = kHandle; //pass the key handler
-        this.type = selectedType;
+        this.type = selectedType; //pass the selected player type
         setDefaultPositionAndSpeed(); //set Player default position on the map and their speed
         getPlayerImages(); //get player pixel art
         hitbox = new Rectangle(8, 16, 32, 32);
@@ -34,25 +33,24 @@ public class Player extends Entity{
     public void setDefaultPositionAndSpeed(){
         MapX = 0; //x coordinate in the window
         MapY = 336; //y coordinate in the window
-        speed = 4; //speed
+        speed = 0; //default speed
         entitySize = 48;
         direction = "down"; //spawned-in direction
 
         switch (type) {
-        case EXPLORER:
-            speed = 6;  // Fast movement for scouting
-            break;
-        case WARRIOR:
-            speed = 3;  // Slower because they are "heavy" or high strength
-            break;
-        case SURVIVOR:
-            speed = 4;  // Standard speed, but maybe they'll have more food later
-            break;
-        default:
-            speed = 4;
-            break;
-    }
-
+            case EXPLORER:
+                speed = 5;  // Fast movement for scouting
+                break;
+            case SURVIVOR:
+                speed = 3;  // Standard speed, but maybe they'll have more food later
+                break;
+            case WARRIOR:
+                speed = 2;  // Slower because they are "heavy" or high strength
+                break;
+            default:
+                speed = 3;
+                break;
+        }
     }
 
     //Accessor methods for player position
@@ -71,7 +69,7 @@ public class Player extends Entity{
                 direction = "down";
             }else if(keyH.pressedLeft){
                 direction = "left";
-            }else if(keyH.pressedRight){
+            }else {
                 direction = "right";
             }
 

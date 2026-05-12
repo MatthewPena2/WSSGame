@@ -1,6 +1,7 @@
 package GameDisplay;
 
 import GameEntity.Player;
+import GameEntity.PlayerType;
 import TileMap.WildernessMapManager;
 
 import javax.swing.*;
@@ -33,17 +34,18 @@ public class GamePanel extends JPanel implements Runnable{
     //gameThread thread is going to manage the uptime of the game (when the game is active)
     Thread gameThread;
     //Create the player object
-    Player player = new Player(this, keyH);
+    Player player;
 
 
     //GamePanel constructor
-    public GamePanel(){
+    public GamePanel(PlayerType selectedType){
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.BLACK); //TEMPORARY game window color
         this.setDoubleBuffered(true); //all drawing/redrawing is done in a separate buffer (improves rendering performance)
         this.addKeyListener(keyH); //listens for user input from keyboard
         this.setFocusable(true); //GamePanel will focus on receiving keyboard input; POTENTIALLY REMOVE LATER
 
+        this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
     }
 
     public void startGameThread(){
@@ -82,6 +84,13 @@ public class GamePanel extends JPanel implements Runnable{
     public void update(){
         //call player update() to update movement
         player.update();
+
+        //check if player has reached the right-hand side of the screen (wins the game)
+        if(player.MapX + tileSize >= screenWidth){
+            System.out.println("Player wins! The player has made it to the other side of the screen.");
+            gameThread = null; //freeze game upon win
+        }
+
     }
 
     //used in run()
