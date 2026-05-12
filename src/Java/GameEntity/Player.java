@@ -15,18 +15,28 @@ public class Player extends Entity{
     //its own update() and draw() methods, which will be used to tell the Game Panel
     //to update its position in the window
 
+    //DECLARE VARIABLES
     GamePanel gp;
     KeyHandler keyH;
     PlayerType type;
-
+    public double foodAmount, waterAmount, strength;
+    int goldAmount;
 
     public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
         gp = panel; //pass the game panel
         keyH = kHandle; //pass the key handler
         this.type = selectedType; //pass the selected player type
+        setStartingSuppliesAndStrength(); //initiate the player supplies
         setDefaultPositionAndSpeed(); //set Player default position on the map and their speed
         getPlayerImages(); //get player pixel art
         hitbox = new Rectangle(8, 16, 32, 32);
+    }
+
+    //Mutator method for initializing the player supplies and strength
+    public void setStartingSuppliesAndStrength(){
+        foodAmount = type.getStartFood();
+        waterAmount = type.getStartWater();
+        strength = type.getStartStrength();
     }
 
     //Mutator method for position x, y and speed
