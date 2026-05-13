@@ -63,15 +63,32 @@ public class Player extends Entity{
         }
     }
 
-    //Accessor methods for player position
-    public int getPlayerXCoord(){return MapX;}
-    public int getPlayerYCoord(){return MapY;}
+    //Help Function - get the current tile index
+    public int getCurrentTileIndex(){
+        int col = (MapX + hitbox.x + hitbox.width / 2)/ gp.tileSize;
+        int row = (MapY + hitbox.y + hitbox.height / 2)/ gp.tileSize;
+
+        //check map safety bounds
+        if (col >= 0 && col < gp.maxScreenCol && row >= 0 && row < gp.maxScreenRow)
+            return gp.tileM.mapTileNum[col][row];
+
+        return 0; //default to Plains
+    }
+
 
     //Update position
     public void update(){
         //if WASD is pressed (up, left, down, right), then manage player movement
         if(keyH.pressedUp || keyH.pressedDown
             || keyH.pressedLeft || keyH.pressedRight){
+
+            //strength check - player should not be able to move if strength is 0
+            //Player is forced to stop moving and rest
+            if(strength <= 0){
+                System.out.println("You are too tired to move. Rest up!");
+                return;
+            }
+
             //manage player movement
             if(keyH.pressedUp){
                 direction = "up";
@@ -96,6 +113,17 @@ public class Player extends Entity{
                     case "left": MapX -= speed; break;
                 }
 
+                //based on the tile index (terrain), lower stats accordingly
+                int tileIndex = getCurrentTileIndex();
+                foodAmount -= gp.tileM.tile[tileIndex].foodCost;
+                waterAmount -= gp.tileM.tile[tileIndex].waterCost;
+                strength -= gp.tileM.tile[tileIndex].strengthCost;
+
+                //prevent stats from going below zero
+                if(foodAmount < 0) foodAmount = 0;
+                if(waterAmount < 0) waterAmount = 0;
+                if(strength < 0) strength = 0;
+
             }
 
             spriteCounter++;
@@ -105,6 +133,13 @@ public class Player extends Entity{
                 spriteCounter = 0;
             }
 
+        } else{ //the player will regain strength when they are not moving
+            if(strength < type.getStartStrength()){ //less than max
+                strength += 0.07; //slowly regain strength
+
+                //keep strength at starting cap
+                if(strength > type.getStartStrength()) strength = type.getStartStrength();
+            }
         }
 
     }

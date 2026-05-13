@@ -31,24 +31,22 @@ public class GamePanel extends JPanel implements Runnable{
     //Collision Checker (for terrain/trader)
     public final CollisionChecker collChecker;
     //Map Manager
-    final WildernessMapManager tileM;
-    //KeyHandler to manage user input for player action
-    private final KeyHandler keyH;
+    public final WildernessMapManager tileM;
     //gameThread thread is going to manage the uptime of the game (when the game is active)
     Thread gameThread;
     //Create the player object
     private final Player player;
 
 
-    //GamePanel constructor
+    //GamePanel constructor - initializes all variables declared above, and then some
     public GamePanel(PlayerType selectedType, int mapColumns, int mapRows){
         this.maxScreenCol = Math.max(MIN_MAP_COLUMNS, mapColumns);
         this.maxScreenRow = Math.max(MIN_MAP_ROWS, mapRows);
         this.screenWidth = tileSize * maxScreenCol;
         this.screenHeight = (tileSize * maxScreenRow) + statUIHeight;
-        this.keyH = new KeyHandler();
         this.collChecker = new CollisionChecker(this);
         this.tileM = new WildernessMapManager(this);
+        KeyHandler keyH = new KeyHandler(); //KeyHandler to manage user input for player action
         this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
@@ -100,6 +98,32 @@ public class GamePanel extends JPanel implements Runnable{
             gameThread = null; //freeze game upon win
         }
 
+        //check if player has run out of food/water (loses the game)
+        if(player.foodAmount <= 0 || player.waterAmount <= 0){
+            System.out.println("Player has died! Remember to eat well and stay hydrated!");
+            gameThread = null;
+        }
+
+    }
+
+    //used in drawStatUI - gets the terrain the player on based on the player's center
+    public String getCurrentTerrain(){
+        //Calculate the center of the player
+        int centerX = player.MapX + (tileSize/2);
+        int centerY = player.MapY + (tileSize/2);
+
+        //Convert the pixel coordinates into array indices
+        //The map is simply an array of integers corresponding to Tile types
+        int col = centerX / tileSize;
+        int row = centerY / tileSize;
+
+        //In-bounds safety check
+        if(col >= 0 && col < maxScreenCol && row >= 0 && row < maxScreenRow){
+            //get the tile number of the tile at [col][row] - tileNumber = type of terrain (0 = Plains, 1 = Desert, etc.)
+            int tileNum = tileM.mapTileNum[col][row];
+            return tileM.tile[tileNum].name; //return the name of the terrain associated with that tile number
+        }
+        return "Unknown"; //if above check fails, return "Unknown"
     }
 
     //used in paintComponent to display player stats at the bottom of the screen
@@ -110,9 +134,13 @@ public class GamePanel extends JPanel implements Runnable{
         int uiY = (tileSize * maxScreenRow) + statUIHeight/2;
         int spacing = 200;
 
+        //display existing stats
         g2.drawString("Food: " + (int)player.foodAmount, 30, uiY);
         g2.drawString("Water: " + (int)player.waterAmount, 30 + spacing, uiY);
         g2.drawString("Strength: " + (int)player.strength, 30 + (spacing * 2), uiY);
+
+        //Display the current terrain
+        g2.drawString("Terrain: " + getCurrentTerrain(), 30 + (spacing * 3), uiY);
     }
 
     //used in run()

@@ -15,15 +15,12 @@ public class GameLauncher {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new FlowLayout());
 
-        JTextField nameField = new JTextField(10);
         JComboBox<PlayerType> pTypeBox = new JComboBox<>(PlayerType.values());
         JComboBox<Difficulty> dTypeBox = new JComboBox<>(Difficulty.values());
         JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(20, 5, 100, 1));
         JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(14, 5, 100, 1));
         JButton startBtn = new JButton("Launch Simulation");
 
-        frame.add(new JLabel("Enter Name:"));
-        frame.add(nameField);
         frame.add(new JLabel("Select Player Type:"));
         frame.add(pTypeBox);
         frame.add(new JLabel("Select Difficulty:"));

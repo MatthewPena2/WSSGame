@@ -29,11 +29,20 @@ public class WildernessMapManager {
         try{
             //create new tile for each specific terrain type
             tile[0] = new Tile(); //plains
+            tile[0].name = "Plains";
+
             tile[1] = new Tile(); //desert
+            tile[1].name = "Desert";
+
             tile[2] = new Tile(); //forest
+            tile[2].name = "Forest";
+
             tile[3] = new Tile(); //mountain
+            tile[3].name = "Mountain";
             tile[3].collision = true; //adds collision with mountain terrain
+
             tile[4] = new Tile(); //river water
+            tile[4].name = "Water";
 
             //user tile image for plains as a test
             InputStream inputStream = getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_plains.png");
@@ -50,6 +59,21 @@ public class WildernessMapManager {
             tile[3].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_mountain.png"));
             //tile image for water
             tile[4].image = ImageIO.read(getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_river_water.png"));
+
+            //Initialize the movement costs for each tile
+            // tile[0] = plains
+            // tile[1] = desert
+            // tile[2] = forest
+            for(int i = 0; i <= 2; i++){
+                tile[i].foodCost = 0.02;
+                tile[i].waterCost = 0.03;
+                tile[i].strengthCost = 0.05;
+            }
+
+            //tile[4] = water
+            tile[4].foodCost = 0.04;
+            tile[4].waterCost = 0.01;
+            tile[4].strengthCost = 0.03;
 
 
         }catch(IOException e){
