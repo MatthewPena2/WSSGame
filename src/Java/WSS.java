@@ -1,3 +1,4 @@
+import Map.Difficulty;
 import Map.WildernessMap;
 
 public class WSS {

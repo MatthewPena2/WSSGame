@@ -2,6 +2,7 @@ package Map;
 
 import java.util.Random;
 
+// Defines terrain types along with movement, resource, and obstacle values.
 public enum Terrain {
     PLAINS(1, 0.5, 0.5, 0.05),
     FOREST(2, 0.5, 1.0, 0.15),
@@ -25,6 +26,7 @@ public enum Terrain {
         return movementCost;
     }
 
+    // Returns the obstacle chance associated with this terrain.
     public double getObstacleChance() {
         return obstacleChance;
     }
@@ -33,10 +35,12 @@ public enum Terrain {
         return waterCost;
     }
 
+    // Returns how much food is consumed when traveling through this terrain.
     public double getFoodCost() {
         return foodCost;
     }
 
+    // Rolls whether movement is blocked by an obstacle on this terrain.
     public boolean hasObstacle(Random random) {
         return random.nextDouble() < obstacleChance;
     }
