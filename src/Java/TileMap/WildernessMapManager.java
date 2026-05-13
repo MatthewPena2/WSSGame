@@ -36,7 +36,7 @@ public class WildernessMapManager {
             tile[4] = new Tile(); //river water
 
             //user tile image for plains as a test
-            var inputStream = getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_plains.png");
+            InputStream inputStream = getClass().getResourceAsStream("/TileTerrainPixelArt/terrain_plains.png");
             if(inputStream == null){ //if not successful, print error message
                 System.out.println("Error: could not find tile art path");
             }else{ //else, load the tile image -- if this path works for this tile, it will work for the others
@@ -60,17 +60,30 @@ public class WildernessMapManager {
     public void loadMap(String filePath){
         try{
             InputStream IS = getClass().getResourceAsStream(filePath);
+            if (IS == null) {
+                throw new IOException("Could not find map resource: " + filePath);
+            }
             BufferedReader BR = new BufferedReader(new InputStreamReader(IS));
 
             int col = 0;
             int row = 0;
             while (col < gp.maxScreenCol && row < gp.maxScreenRow){
                 String line = BR.readLine();
-                while(col < gp.maxScreenCol){
-                    String[] numbers = line.split(" ");
-                    int num = Integer.parseInt(numbers[col]);
-                    mapTileNum[col][row] = num;
-                    col++;
+                if (line == null) {
+                    while (col < gp.maxScreenCol) {
+                        mapTileNum[col][row] = 0;
+                        col++;
+                    }
+                } else {
+                    String[] numbers = line.trim().split("\\s+");
+                    while(col < gp.maxScreenCol){
+                        int num = 0;
+                        if (col < numbers.length) {
+                            num = Integer.parseInt(numbers[col]);
+                        }
+                        mapTileNum[col][row] = num;
+                        col++;
+                    }
                 }
                 if(col == gp.maxScreenCol){
                     col = 0;
@@ -79,7 +92,7 @@ public class WildernessMapManager {
             }
             BR.close();
         } catch (Exception e) {
-
+            throw new IllegalStateException("Failed to load map layout from " + filePath, e);
         }
     }
 
