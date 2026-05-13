@@ -1,6 +1,8 @@
 package Map;
 
+// Small console demo for testing map generation and movement without the GUI.
 public class MapDemo {
+    // Creates a sample map and prints a basic movement test.
     public static void main(String[] args) {
         WildernessMap map = new WildernessMap(20, 10, Difficulty.MEDIUM);
 

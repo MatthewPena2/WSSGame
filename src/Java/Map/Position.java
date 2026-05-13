@@ -2,6 +2,7 @@ package Map;
 
 import java.util.Objects;
 
+// Immutable x/y coordinate used for tiles, player location, and generation.
 public final class Position {
     private final int x;
     private final int y;
@@ -11,14 +12,17 @@ public final class Position {
         this.y = y;
     }
 
+    // Returns the x-coordinate on the map grid.
     public int getX() {
         return x;
     }
 
+    // Returns the y-coordinate on the map grid.
     public int getY() {
         return y;
     }
 
+    // Creates a new position moved one step in the given direction.
     public Position translate(Direction direction) {
         return new Position(x + direction.getDeltaX(), y + direction.getDeltaY());
     }

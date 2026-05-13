@@ -1,5 +1,6 @@
 package Map;
 
+// Represents the 8 directions the player or generator can move on the grid.
 public enum Direction {
     NORTH(0, -1),
     NORTHEAST(1, -1),
@@ -18,10 +19,12 @@ public enum Direction {
         this.deltaY = deltaY;
     }
 
+    // Returns the horizontal change for this direction.
     public int getDeltaX() {
         return deltaX;
     }
 
+    // Returns the vertical change for this direction.
     public int getDeltaY() {
         return deltaY;
     }
