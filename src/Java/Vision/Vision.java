@@ -2,11 +2,9 @@ package Vision;
 
 import Map.Direction;
 import Map.Position;
-import Map.Terrain;
 import Map.Tile;
 import Map.WildernessMap;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -82,8 +80,8 @@ public abstract class Vision {
         updateScope(playerLocation);
         List<Tile> candidates = new ArrayList<>();
 
-        for (Tile t: scope) {
-            if (target.test(t)) {
+        for (Tile t : scope) {
+            if (t != null && target.test(t)) {
                 candidates.add(t);
             }
         }
@@ -183,51 +181,47 @@ public abstract class Vision {
     private Path buildPath(Position from, Tile to) {
         List<Direction> moves = new ArrayList<>();
         int totalMoveCost = 0;
-        int totalWaterCost = 0;
-        int totalFoodCost = 0;
-
+        double totalWaterCost = 0.0;
+        double totalFoodCost = 0.0;
+ 
         int curX = from.getX();
         int curY = from.getY();
         int toX = to.getPosition().getX();
         int toY = to.getPosition().getY();
-
+ 
         while (curX != toX || curY != toY) {
             int dx = Integer.compare(toX, curX);
             int dy = Integer.compare(toY, curY);
-
+ 
             moves.add(deltaToDirection(dx, dy));
             curX += dx;
             curY += dy;
-
+ 
             Tile stepTile = map.getTileAt(new Position(curX, curY));
             if (stepTile != null) {
-                totalMoveCost += stepTile.getMovementCost();
+                totalMoveCost  += stepTile.getMovementCost();
                 totalWaterCost += stepTile.getWaterCost();
-                totalFoodCost += stepTile.getFoodCost();
+                totalFoodCost  += stepTile.getFoodCost();
             }
         }
-
-        totalMoveCost += to.getMovementCost();
-        totalWaterCost += to.getWaterCost();
-        totalFoodCost += to.getFoodCost();
-
+ 
         return new Path(moves, totalMoveCost, totalWaterCost, totalFoodCost);
     }
 
 
     private int manhattanDistance(Position a, Position b) {
-        return Math.abs(a.getX() - b.getX() + Math.abs(a.getY() - b.getY()));
+        return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
     }
+
 
     private Direction deltaToDirection(int dx, int dy) {
         for (Direction d : Direction.values()) {
-            if (d.getDeltaX() == dx && d.getDeltaY() == dy) {
-                return d;
-            }
-            throw new IllegalArgumentException("No Direction for delta (" + dx + ", " + dy + ")");
+            if (d.getDeltaX() == dx && d.getDeltaY() == dy) return d;
         }
+        throw new IllegalArgumentException("No Direction for delta (" + dx + ", " + dy + ")");
     }
 
+    
     protected Tile[] resolveScope(Position location, Direction[] directions, int range) {
         List<Tile> result = new ArrayList<>();
         for (Direction dir : directions) {
