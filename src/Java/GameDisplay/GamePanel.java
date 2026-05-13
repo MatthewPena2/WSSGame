@@ -9,17 +9,19 @@ import java.awt.*;
 
 //GamePanel class will work as a game screen (displaying/drawing)
 public class GamePanel extends JPanel implements Runnable{
+    private static final int MIN_MAP_COLUMNS = 5;
+    private static final int MIN_MAP_ROWS = 5;
 
     //Display settings
     final int tileSizeInPixels = 16; //each tile, player icon, item, entity, etc. will be 16 by 16 pixels
     final int tileSizeScale = 3; //blows up the tile image to make it bigger on screen
 
     public final int tileSize = tileSizeInPixels * tileSizeScale; //16 * 3 = 48; 48 by 48
-    public final int maxScreenCol = 20; //20 tiles across; 960 pixels across
-    public final int maxScreenRow = 14; //14 tiles down; 672 pixels down
-    public final int screenWidth = tileSize * maxScreenCol; //width is in pixels displayed on screen
+    public final int maxScreenCol; //dynamic map width in tiles
+    public final int maxScreenRow; //dynamic map height in tiles
     public final int statUIHeight = tileSize * 2; //space dedicated to stat screen
-    public final int screenHeight = (tileSize * maxScreenRow) + statUIHeight; //height is in pixels displayed on screen
+    public final int screenWidth; //width is in pixels displayed on screen
+    public final int screenHeight; //height is in pixels displayed on screen
     //When it comes to drawing on a screen, the game panel will be using the player's position in pixels
 
     //FPS Cap = 60 FPS
@@ -27,26 +29,32 @@ public class GamePanel extends JPanel implements Runnable{
     int FPS = 60;
 
     //Collision Checker (for terrain/trader)
-    public CollisionChecker collChecker = new CollisionChecker(this);
+    public final CollisionChecker collChecker;
     //Map Manager
-    WildernessMapManager tileM = new WildernessMapManager(this);
+    final WildernessMapManager tileM;
     //KeyHandler to manage user input for player action
-    KeyHandler keyH = new KeyHandler();
+    private final KeyHandler keyH;
     //gameThread thread is going to manage the uptime of the game (when the game is active)
     Thread gameThread;
     //Create the player object
-    Player player;
+    private final Player player;
 
 
     //GamePanel constructor
-    public GamePanel(PlayerType selectedType){
+    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows){
+        this.maxScreenCol = Math.max(MIN_MAP_COLUMNS, mapColumns);
+        this.maxScreenRow = Math.max(MIN_MAP_ROWS, mapRows);
+        this.screenWidth = tileSize * maxScreenCol;
+        this.screenHeight = (tileSize * maxScreenRow) + statUIHeight;
+        this.keyH = new KeyHandler();
+        this.collChecker = new CollisionChecker(this);
+        this.tileM = new WildernessMapManager(this);
+        this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
         this.setDoubleBuffered(true); //all drawing/redrawing is done in a separate buffer (improves rendering performance)
         this.addKeyListener(keyH); //listens for user input from keyboard
         this.setFocusable(true); //GamePanel will focus on receiving keyboard input; POTENTIALLY REMOVE LATER
-
-        this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
     }
 
     public void startGameThread(){

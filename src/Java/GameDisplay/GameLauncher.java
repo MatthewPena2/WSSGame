@@ -2,8 +2,12 @@ package GameDisplay;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import GameEntity.PlayerType;
 import Map.Difficulty;
+import Map.WildernessMap;
 
 public class GameLauncher {
     public static void main(String[] args) {
@@ -14,6 +18,8 @@ public class GameLauncher {
         JTextField nameField = new JTextField(10);
         JComboBox<PlayerType> pTypeBox = new JComboBox<>(PlayerType.values());
         JComboBox<Difficulty> dTypeBox = new JComboBox<>(Difficulty.values());
+        JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(20, 5, 100, 1));
+        JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(14, 5, 100, 1));
         JButton startBtn = new JButton("Launch Simulation");
 
         frame.add(new JLabel("Enter Name:"));
@@ -22,14 +28,34 @@ public class GameLauncher {
         frame.add(pTypeBox);
         frame.add(new JLabel("Select Difficulty:"));
         frame.add(dTypeBox);
+        frame.add(new JLabel("Map Width:"));
+        frame.add(widthSpinner);
+        frame.add(new JLabel("Map Height:"));
+        frame.add(heightSpinner);
         frame.add(startBtn);
 
         startBtn.addActionListener(e -> {
             PlayerType selected = (PlayerType) pTypeBox.getSelectedItem(); // return selected player type from menu
-            frame.dispose(); // Close selection window
+            Difficulty selectedDifficulty = (Difficulty) dTypeBox.getSelectedItem();
+            int mapWidth = (Integer) widthSpinner.getValue();
+            int mapHeight = (Integer) heightSpinner.getValue();
 
-            GameWindow gameWindow = new GameWindow();
-            gameWindow.startGame(selected); //call game window to start game (with selections)
+            try {
+                Path exportPath = Paths.get("res", "MapLayout", "tileMap.txt");
+                WildernessMap generatedMap = new WildernessMap(mapWidth, mapHeight, selectedDifficulty);
+                generatedMap.exportToTileMapFile(exportPath);
+
+                frame.dispose(); // Close selection window
+
+                GameWindow gameWindow = new GameWindow();
+                gameWindow.startGame(selected, mapWidth, mapHeight); //call game window to start game (with selections)
+            } catch (IOException ioException) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Could not generate the map file:\n" + ioException.getMessage(),
+                        "Map Generation Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         frame.pack();
