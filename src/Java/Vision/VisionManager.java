@@ -5,6 +5,8 @@ import Map.WildernessMap;
 
 
 /**
+ * VisionManager
+ * 
  * The VisionManager class is responsible for creating the different vision types. 
  * It is the ONLY entry point into the Vision package.
  */
