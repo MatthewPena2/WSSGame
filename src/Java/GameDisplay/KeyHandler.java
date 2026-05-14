@@ -36,4 +36,12 @@ public class KeyHandler implements KeyListener{
         if(code == KeyEvent.VK_D) pressedRight = false;
 
     }
+
+    public void resetKeys(){
+        //failsafe for trading - player cannot move during trading
+        pressedDown = false;
+        pressedUp = false;
+        pressedLeft = false;
+        pressedRight = false;
+    }
 }

@@ -2,6 +2,7 @@ package GameDisplay;
 
 import GameEntity.Player;
 import GameEntity.PlayerType;
+import GameEntity.Trader;
 import TileMap.WildernessMapManager;
 
 import javax.swing.*;
@@ -22,6 +23,7 @@ public class GamePanel extends JPanel implements Runnable{
     public final int statUIHeight = tileSize * 2; //space dedicated to stat screen
     public final int screenWidth; //width is in pixels displayed on screen
     public final int screenHeight; //height is in pixels displayed on screen
+    public boolean canTrade = true; //used to determine trading cooldowns
     //When it comes to drawing on a screen, the game panel will be using the player's position in pixels
 
     //FPS Cap = 60 FPS
@@ -32,10 +34,14 @@ public class GamePanel extends JPanel implements Runnable{
     public final CollisionChecker collChecker;
     //Map Manager
     public final WildernessMapManager tileM;
+    //Key Handler Object
+    KeyHandler keyH;
     //gameThread thread is going to manage the uptime of the game (when the game is active)
     Thread gameThread;
     //Create the player object
     private final Player player;
+    //Create new trader object
+    public Trader trader;
 
 
     //GamePanel constructor - initializes all variables declared above, and then some
@@ -46,7 +52,8 @@ public class GamePanel extends JPanel implements Runnable{
         this.screenHeight = (tileSize * maxScreenRow) + statUIHeight;
         this.collChecker = new CollisionChecker(this);
         this.tileM = new WildernessMapManager(this);
-        KeyHandler keyH = new KeyHandler(); //KeyHandler to manage user input for player action
+        this.keyH = new KeyHandler(); //KeyHandler to manage user input for player action
+        this.trader = new Trader(this); //initialize new trader
         this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
@@ -92,6 +99,8 @@ public class GamePanel extends JPanel implements Runnable{
         //call player update() to update movement
         player.update();
 
+        tradeInteraction();
+
         //check if player has reached the right-hand side of the screen (wins the game)
         if(player.MapX + tileSize >= screenWidth){
             System.out.println("Player wins! The player has made it to the other side of the screen.");
@@ -104,6 +113,50 @@ public class GamePanel extends JPanel implements Runnable{
             gameThread = null;
         }
 
+    }
+
+    public void tradeInteraction(){
+        int objIndex = collChecker.checkObjectCollision(player, trader);
+        if(objIndex != -1 && canTrade){
+            canTrade = false; //set trade cooldown
+            keyH.resetKeys(); //stop all player movement when trading
+
+            //Define choices for Trade (ask player what they want to buy)
+            String[] items = {"Food", "Water", "Leave"};
+
+            int itemChoice = JOptionPane.showOptionDialog(this, "Trader: What do you need?",
+                    "Trade", 0, JOptionPane.QUESTION_MESSAGE, null, items, items[0]);
+
+            if(itemChoice == 0 || itemChoice == 1){
+                String selectedItem = items[itemChoice];
+
+                //Ask player for gold
+                String input = JOptionPane.showInputDialog(this,
+                        "What are you offering for " + selectedItem + "?");
+
+                if(input != null){
+                    try{
+                        //Evaluate player offer
+                        int offer = Integer.parseInt(input);
+                        if(offer > player.goldAmount) JOptionPane.showMessageDialog(this, "You're broke. Leave!");
+                        else if(trader.evaluateOffer(selectedItem, offer)){
+                            player.goldAmount -= offer;
+                            if(selectedItem.equals("Food")) player.foodAmount += 20;
+                            if(selectedItem.equals("Water")) player.waterAmount += 15;
+
+                            JOptionPane.showMessageDialog(this, "Trader: Deal!");
+                        }else{
+                            JOptionPane.showMessageDialog(this, "Seriously? Get lost.");
+                        }
+
+                    }catch(NumberFormatException e){
+                        JOptionPane.showMessageDialog(this, "Speak clearly (enter a number)");
+                    }
+                }
+            }
+        }
+
+        if(objIndex == -1) canTrade = true; //rest trade cooldown when player leaves trader hitbox
     }
 
     //used in drawStatUI - gets the terrain the player on based on the player's center
@@ -132,15 +185,18 @@ public class GamePanel extends JPanel implements Runnable{
         g2.setFont(new Font("Arial", Font.BOLD, 20));
 
         int uiY = (tileSize * maxScreenRow) + statUIHeight/2;
-        int spacing = 200;
+        int spacing = 150;
 
         //display existing stats
         g2.drawString("Food: " + (int)player.foodAmount, 30, uiY);
         g2.drawString("Water: " + (int)player.waterAmount, 30 + spacing, uiY);
         g2.drawString("Strength: " + (int)player.strength, 30 + (spacing * 2), uiY);
+        g2.setColor(Color.YELLOW);
+        g2.drawString("Gold: " + player.goldAmount, 40 + (spacing * 3), uiY);
 
         //Display the current terrain
-        g2.drawString("Terrain: " + getCurrentTerrain(), 30 + (spacing * 3), uiY);
+        g2.setColor(Color.black);
+        g2.drawString("Terrain: " + getCurrentTerrain(), 30 + (spacing * 4), uiY);
     }
 
     //used in run()
@@ -150,6 +206,8 @@ public class GamePanel extends JPanel implements Runnable{
         Graphics2D g2 = (Graphics2D)g; //cast g as a Graphics2D variable (Graphics2D has more components than Graphics)
         //call map manager
         tileM.draw(g2);
+        //call trader drawTrader() to draw trader on the panel
+        trader.drawTrader(g2);
         //call player draw() to draw player on the panel
         player.draw(g2);
         //call drawStatUI() to display the player's resources

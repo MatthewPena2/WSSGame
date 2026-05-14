@@ -86,4 +86,28 @@ public class CollisionChecker {
         }
 
     }
+
+    public int checkObjectCollision(Entity entity, Entity target){
+        int index = -1;
+        if(target != null){
+            //Get the entity's hitbox in the world
+            entity.hitbox.x = entity.MapX + entity.hitbox.x;
+            entity.hitbox.y = entity.MapY + entity.hitbox.y;
+
+            //Get the target's hitbox in the world
+            target.hitbox.x = target.MapX + target.hitbox.x;
+            target.hitbox.y = target.MapY + target.hitbox.y;
+
+            if(entity.hitbox.intersects(target.hitbox)) index = 0; //Collision detected
+
+            entity.hitbox.x = 8;
+            entity.hitbox.y = 16;
+            target.hitbox.x = 0;
+            target.hitbox.y = 0;
+
+        }
+
+        return index;
+    }
+
 }

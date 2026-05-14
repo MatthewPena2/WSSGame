@@ -20,7 +20,7 @@ public class Player extends Entity{
     KeyHandler keyH;
     PlayerType type;
     public double foodAmount, waterAmount, strength;
-    int goldAmount;
+    public int goldAmount = 30;
 
     public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
         gp = panel; //pass the game panel
@@ -74,7 +74,6 @@ public class Player extends Entity{
 
         return 0; //default to Plains
     }
-
 
     //Update position
     public void update(){
