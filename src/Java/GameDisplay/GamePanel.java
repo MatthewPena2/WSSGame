@@ -1,5 +1,6 @@
 package GameDisplay;
 
+import GameEntity.Item;
 import GameEntity.Player;
 import GameEntity.PlayerType;
 import GameEntity.Trader;
@@ -7,6 +8,9 @@ import TileMap.WildernessMapManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 //GamePanel class will work as a game screen (displaying/drawing)
 public class GamePanel extends JPanel implements Runnable{
@@ -42,6 +46,8 @@ public class GamePanel extends JPanel implements Runnable{
     private final Player player;
     //Create new trader object
     public Trader trader;
+    //Create item collection
+    public List<Item> items;
 
 
     //GamePanel constructor - initializes all variables declared above, and then some
@@ -54,6 +60,7 @@ public class GamePanel extends JPanel implements Runnable{
         this.tileM = new WildernessMapManager(this);
         this.keyH = new KeyHandler(); //KeyHandler to manage user input for player action
         this.trader = new Trader(this); //initialize new trader
+        this.items = spawnItems(); //initialize map items
         this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
@@ -98,6 +105,7 @@ public class GamePanel extends JPanel implements Runnable{
     public void update(){
         //call player update() to update movement
         player.update();
+        collectItemsAtPlayer();
 
         tradeInteraction();
 
@@ -159,6 +167,54 @@ public class GamePanel extends JPanel implements Runnable{
         if(objIndex == -1) canTrade = true; //rest trade cooldown when player leaves trader hitbox
     }
 
+    private List<Item> spawnItems() {
+        List<Item> generatedItems = new ArrayList<Item>();
+        Random random = new Random();
+        int mapArea = maxScreenCol * maxScreenRow;
+        int maxItems = Math.max(1, mapArea / 150);
+
+        for (int row = 0; row < maxScreenRow && generatedItems.size() < maxItems; row++) {
+            for (int col = 0; col < maxScreenCol && generatedItems.size() < maxItems; col++) {
+                int tileNum = tileM.mapTileNum[col][row];
+                if (tileM.tile[tileNum].collision) {
+                    continue;
+                }
+                if (trader.MapX / tileSize == col && trader.MapY / tileSize == row) {
+                    continue;
+                }
+                if (random.nextDouble() < 0.1) {
+                    generatedItems.add(new Item(col, row, randomItemType(random)));
+                }
+            }
+        }
+
+        return generatedItems;
+    }
+
+    private Item.ItemType randomItemType(Random random) {
+        double roll = random.nextDouble();
+        if (roll < 0.30) {
+            return Item.ItemType.FOOD;
+        }
+        if (roll < 0.60) {
+            return Item.ItemType.WATER;
+        }
+        return Item.ItemType.GOLD;
+    }
+
+    private void collectItemsAtPlayer() {
+        int centerX = player.MapX + (tileSize / 2);
+        int centerY = player.MapY + (tileSize / 2);
+        int col = centerX / tileSize;
+        int row = centerY / tileSize;
+
+        for (Item item : items) {
+            if (!item.isCollected() && item.isOnTile(col, row)) {
+                item.collect(player);
+            }
+        }
+    }
+
     //used in drawStatUI - gets the terrain the player on based on the player's center
     public String getCurrentTerrain(){
         //Calculate the center of the player
@@ -206,6 +262,10 @@ public class GamePanel extends JPanel implements Runnable{
         Graphics2D g2 = (Graphics2D)g; //cast g as a Graphics2D variable (Graphics2D has more components than Graphics)
         //call map manager
         tileM.draw(g2);
+        //draw collectible items as colored tile-corner markers
+        for (Item item : items) {
+            item.draw(g2, tileSize);
+        }
         //call trader drawTrader() to draw trader on the panel
         trader.drawTrader(g2);
         //call player draw() to draw player on the panel
