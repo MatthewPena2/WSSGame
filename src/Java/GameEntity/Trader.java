@@ -9,13 +9,14 @@ import java.util.Random;
 
 public class Trader extends Entity{
     GamePanel gp;
+    public TraderType type; //used to determine type of trader
 
     public Trader(GamePanel panel){
         gp = panel;
-
         //define hitbox - when player and trader hitbox collide, an interaction will occur
         hitbox = new Rectangle(0, 0, 48, 48);
-
+        //randomly assign a trader type
+        this.type = TraderType.values()[new Random().nextInt(TraderType.values().length)];
         //spawn randomly within map bounds
         spawnRandomly();
         //load trader sprite image
@@ -49,10 +50,23 @@ public class Trader extends Entity{
         int minPrice = 0;
 
         //minimum prices trader is willing to accept
-        if(item.equals("Food") || item.equals("food")) minPrice = 15; //wants 15 gold for food
-        if(item.equals("Water") || item.equals("water")) minPrice = 20; //wants 20 gold for water
+        if(item.equals("Food")) minPrice = type.getMinFoodPrice(); //wants 15 gold for food
+        if(item.equals("Water")) minPrice = type.getMinWaterPrice(); //wants 20 gold for water
         //"rationality": if player's offer exceeds or matches asked price, trade is accepted
         return offerAmount >= minPrice;
+    }
+
+    //trade negotiation rational - counteroffer based on minimum currency requirements in evaluateOffer()
+    public int getCounterOffer(String item){
+        int baseMin = 0; //base min price
+        int premium = 2; //additional price
+
+        if(item.equals("Food")) baseMin = type.getMinFoodPrice(); //wants 15 gold for food
+        if(item.equals("Water")) baseMin = type.getMinWaterPrice(); //wants 20 gold for water
+
+        if(type == TraderType.GREEDY) premium = 10; //increase premium on greedy traders
+
+        return baseMin + premium; //returns highest asking price
     }
 
     //get the trader sprite image

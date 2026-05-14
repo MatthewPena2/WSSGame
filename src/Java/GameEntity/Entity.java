@@ -5,7 +5,6 @@ import java.awt.image.BufferedImage;
 
 public class Entity {
     public int MapX, MapY; //position of entity on the map
-    public int speed; //traveling speed of entity (will mainly apply to the Player)
     protected int entitySize; //used to draw the entity on screen (in terms of pixels)
 
     //variables used to draw the entity using png pixel art

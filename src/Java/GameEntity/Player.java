@@ -21,6 +21,9 @@ public class Player extends Entity{
     PlayerType type;
     public double foodAmount, waterAmount, strength;
     public int goldAmount = 30;
+    public int speed = 0; //default speed used to traverse the map
+    //The player moves in pixels
+    //A speed of 3 means the player will move 3 pixels everytime an appropriate movement key is pressed
 
     public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
         gp = panel; //pass the game panel
@@ -43,7 +46,6 @@ public class Player extends Entity{
     public void setDefaultPositionAndSpeed(){
         MapX = 0; //x coordinate in the window
         MapY = 336; //y coordinate in the window
-        speed = 0; //default speed
         entitySize = 48;
         direction = "down"; //spawned-in direction
 

@@ -1,6 +1,7 @@
 package GameDisplay;
 
 import GameEntity.Entity;
+import GameEntity.Player;
 
 //TRACKS PLAYER MOVEMENT - ENSURES PLAYER COLLIDES WITH MOUNTAIN OBJECT AND STAYS IN BOUNDS
 
@@ -11,7 +12,7 @@ public class CollisionChecker {
         gp = panel;
     }
 
-    public void checkTileCollision(Entity entity){
+    public void checkTileCollision(Player entity){
         int entityLeftMapX = entity.MapX + entity.hitbox.x;
         int entityRightMapX = entity.MapX + entity.hitbox.x + entity.hitbox.width;
         int entityTopMapY = entity.MapY + entity.hitbox.y;

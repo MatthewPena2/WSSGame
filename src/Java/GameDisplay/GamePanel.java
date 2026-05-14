@@ -1,9 +1,6 @@
 package GameDisplay;
 
-import GameEntity.Item;
-import GameEntity.Player;
-import GameEntity.PlayerType;
-import GameEntity.Trader;
+import GameEntity.*;
 import TileMap.WildernessMapManager;
 
 import javax.swing.*;
@@ -12,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-//GamePanel class will work as a game screen (displaying/drawing)
+//GamePanel class operates like a game manger
+//This class is responsible for handling in-game interactions, player movement, screen display (pop-ups and draw), etc.
 public class GamePanel extends JPanel implements Runnable{
     private static final int MIN_MAP_COLUMNS = 5;
     private static final int MIN_MAP_ROWS = 5;
@@ -29,6 +27,7 @@ public class GamePanel extends JPanel implements Runnable{
     public final int screenHeight; //height is in pixels displayed on screen
     public boolean canTrade = true; //used to determine trading cooldowns
     //When it comes to drawing on a screen, the game panel will be using the player's position in pixels
+    private long lastTime, currentTime; //used in run() to determine update() time interval
 
     //FPS Cap = 60 FPS
     //used to tell the game panel how many times per second to update the display window (calling update()/repaint())
@@ -48,7 +47,6 @@ public class GamePanel extends JPanel implements Runnable{
     public Trader trader;
     //Create item collection
     public List<Item> items;
-
 
     //GamePanel constructor - initializes all variables declared above, and then some
     public GamePanel(PlayerType selectedType, int mapColumns, int mapRows){
@@ -84,8 +82,7 @@ public class GamePanel extends JPanel implements Runnable{
         //if we leave it as the system default, the player marker will move too fast
         double drawInterval = 1000000000/FPS;
         double delta = 0;
-        long lastTime = System.nanoTime();
-        long currentTime;
+        lastTime = System.nanoTime();
 
         while(gameThread != null){ //as long as this game thread exists, execute the loop
             currentTime = System.nanoTime();
@@ -102,71 +99,33 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     //used in run()
-    public void update(){
+    private void update(){
         //call player update() to update movement
         player.update();
+
+        //check if player has collected an item
         collectItemsAtPlayer();
 
+        //check if a trade interaction is happening
         tradeInteraction();
 
         //check if player has reached the right-hand side of the screen (wins the game)
         if(player.MapX + tileSize >= screenWidth){
-            System.out.println("Player wins! The player has made it to the other side of the screen.");
+            JOptionPane.showMessageDialog(this, "You won! " +
+                    "The player has made it to the east side of the map.");
             gameThread = null; //freeze game upon win
         }
 
         //check if player has run out of food/water (loses the game)
         if(player.foodAmount <= 0 || player.waterAmount <= 0){
-            System.out.println("Player has died! Remember to eat well and stay hydrated!");
+            JOptionPane.showMessageDialog(this, "You died!" +
+                    " Remember to eat well and stay hydrated!");
             gameThread = null;
         }
 
     }
 
-    public void tradeInteraction(){
-        int objIndex = collChecker.checkObjectCollision(player, trader);
-        if(objIndex != -1 && canTrade){
-            canTrade = false; //set trade cooldown
-            keyH.resetKeys(); //stop all player movement when trading
-
-            //Define choices for Trade (ask player what they want to buy)
-            String[] items = {"Food", "Water", "Leave"};
-
-            int itemChoice = JOptionPane.showOptionDialog(this, "Trader: What do you need?",
-                    "Trade", 0, JOptionPane.QUESTION_MESSAGE, null, items, items[0]);
-
-            if(itemChoice == 0 || itemChoice == 1){
-                String selectedItem = items[itemChoice];
-
-                //Ask player for gold
-                String input = JOptionPane.showInputDialog(this,
-                        "What are you offering for " + selectedItem + "?");
-
-                if(input != null){
-                    try{
-                        //Evaluate player offer
-                        int offer = Integer.parseInt(input);
-                        if(offer > player.goldAmount) JOptionPane.showMessageDialog(this, "You're broke. Leave!");
-                        else if(trader.evaluateOffer(selectedItem, offer)){
-                            player.goldAmount -= offer;
-                            if(selectedItem.equals("Food")) player.foodAmount += 20;
-                            if(selectedItem.equals("Water")) player.waterAmount += 15;
-
-                            JOptionPane.showMessageDialog(this, "Trader: Deal!");
-                        }else{
-                            JOptionPane.showMessageDialog(this, "Seriously? Get lost.");
-                        }
-
-                    }catch(NumberFormatException e){
-                        JOptionPane.showMessageDialog(this, "Speak clearly (enter a number)");
-                    }
-                }
-            }
-        }
-
-        if(objIndex == -1) canTrade = true; //rest trade cooldown when player leaves trader hitbox
-    }
-
+    //spawns items on the map
     private List<Item> spawnItems() {
         List<Item> generatedItems = new ArrayList<Item>();
         Random random = new Random();
@@ -191,6 +150,7 @@ public class GamePanel extends JPanel implements Runnable{
         return generatedItems;
     }
 
+    //generates a random item type
     private Item.ItemType randomItemType(Random random) {
         double roll = random.nextDouble();
         if (roll < 0.30) {
@@ -202,6 +162,7 @@ public class GamePanel extends JPanel implements Runnable{
         return Item.ItemType.GOLD;
     }
 
+    //calls item class to collect the item and add stats to the player
     private void collectItemsAtPlayer() {
         int centerX = player.MapX + (tileSize / 2);
         int centerY = player.MapY + (tileSize / 2);
@@ -215,8 +176,76 @@ public class GamePanel extends JPanel implements Runnable{
         }
     }
 
+    //used in update() - game keeps checking if a trade interaction has occurred
+    private void tradeInteraction(){
+        int objIndex = collChecker.checkObjectCollision(player, trader);
+        if(objIndex != -1 && canTrade){
+            canTrade = false; //set trade cooldown
+            keyH.resetKeys(); //stop all player movement when trading
+
+            //Define choices for Trade (ask player what they want to buy)
+            String[] items = {"Food", "Water", "Leave"};
+
+            int itemChoice = JOptionPane.showOptionDialog(this, "Trader: What do you need?",
+                    "Trade", 0, JOptionPane.QUESTION_MESSAGE, null, items, items[0]);
+
+            if(itemChoice == 0 || itemChoice == 1){
+                String selectedItem = items[itemChoice];
+
+                //Ask player for gold
+                String input = JOptionPane.showInputDialog(this,
+                        "Trader: What are you offering for " + selectedItem + "?");
+
+                if(input != null){
+                    try{
+                        //Evaluate player offer
+                        int offer = Integer.parseInt(input);
+
+                        //Logic Path A: Player cannot afford a trade
+                        if(offer > player.goldAmount) JOptionPane.showMessageDialog(this, "Trader: You're broke. Leave!");
+                            //Logic Path B: Trade Accepted
+                        else if(trader.evaluateOffer(selectedItem, offer)){
+                            processTrade(selectedItem, offer);
+                            JOptionPane.showMessageDialog(this, "Trader: Deal!");
+                        }
+                        //Logic Path C: Counteroffer (once)
+                        else{
+                            int counter = trader.getCounterOffer(selectedItem);
+                            int response = JOptionPane.showConfirmDialog(this,
+                                    "Trader: Seriously? I'll accept at least " + counter + " gold. Do we have a deal?",
+                                    "Counteroffer", JOptionPane.YES_NO_OPTION);
+                            //Logic Path C1: Counter accepted
+                            if(response == JOptionPane.YES_OPTION && player.goldAmount >= counter){
+                                processTrade(selectedItem, counter);
+                                JOptionPane.showMessageDialog(this, "Trader: Good choice.");
+                            }else{ //Logic Path C2: Counter rejected/player kicked out
+                                JOptionPane.showMessageDialog(this, "Trader: Get lost.");
+                            }
+                        }
+
+                    }catch(NumberFormatException e){
+                        JOptionPane.showMessageDialog(this, "Speak clearly (enter a number)");
+                    }
+                }
+            }
+            lastTime = System.nanoTime(); //reset lastTime for run()
+            // FIXES bug where update() tries to catch up after time spent in trade
+            trader.type = TraderType.values()[new Random().nextInt(TraderType.values().length)]; //choose a rand trader type
+            trader.spawnRandomly(); //move trader after interaction to force players to move again
+        }
+
+        if(objIndex == -1) canTrade = true; //rest trade cooldown when player leaves trader hitbox
+    }
+
+    //helper function used in tradeInteraction to process a trade
+    private void processTrade(String item, int price){
+        player.goldAmount -= price;
+        if(item.equals("Food")) player.foodAmount += 30;
+        if(item.equals("Water")) player.waterAmount += 15;
+    }
+
     //used in drawStatUI - gets the terrain the player on based on the player's center
-    public String getCurrentTerrain(){
+    private String getCurrentTerrain(){
         //Calculate the center of the player
         int centerX = player.MapX + (tileSize/2);
         int centerY = player.MapY + (tileSize/2);
@@ -236,7 +265,7 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     //used in paintComponent to display player stats at the bottom of the screen
-    public void drawStatUI(Graphics2D g2){
+    private void drawStatUI(Graphics2D g2){
         g2.setColor(Color.black);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
 
