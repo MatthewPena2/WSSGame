@@ -656,6 +656,9 @@ public class WildernessMap {
     }
 
     private boolean canPlaceMountain(Terrain[][] layout, Position position) {
+        if (position.getX() == 0) {
+            return false;
+        }
         Terrain terrain = layout[position.getY()][position.getX()];
         if (terrain == Terrain.RIVER || terrain == Terrain.MOUNTAIN) {
             return false;

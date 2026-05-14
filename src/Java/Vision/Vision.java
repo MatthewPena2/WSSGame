@@ -6,7 +6,6 @@ import Map.Terrain;
 import Map.Tile;
 import Map.WildernessMap;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -224,8 +223,8 @@ public abstract class Vision {
             if (d.getDeltaX() == dx && d.getDeltaY() == dy) {
                 return d;
             }
-            throw new IllegalArgumentException("No Direction for delta (" + dx + ", " + dy + ")");
         }
+        throw new IllegalArgumentException("No Direction for delta (" + dx + ", " + dy + ")");
     }
 
     protected Tile[] resolveScope(Position location, Direction[] directions, int range) {
