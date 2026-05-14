@@ -131,7 +131,7 @@ class KeenEyedVision extends Vision {
  * HindSightVision
  * 
  * Behavior:
- *  - W, NE, SE (Range 2)
+ *  - W, NW, SW (Range 2)
  *  - E (Range 1)
  * 
  * A Vision type designed to support backtracking behavior
