@@ -350,7 +350,9 @@ public abstract class Vision {
      */
     private Direction deltaToDirection(int dx, int dy) {
         for (Direction d : Direction.values()) {
-            if (d.getDeltaX() == dx && d.getDeltaY() == dy) return d;
+            if (d.getDeltaX() == dx && d.getDeltaY() == dy) {
+                return d;
+            }
         }
         throw new IllegalArgumentException("No Direction for delta (" + dx + ", " + dy + ")");
     }
