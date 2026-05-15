@@ -111,18 +111,37 @@ public class GamePanel extends JPanel implements Runnable{
 
         //check if player has reached the right-hand side of the screen (wins the game)
         if(player.MapX + tileSize >= screenWidth){
-            JOptionPane.showMessageDialog(this, "You won! " +
-                    "The player has made it to the east side of the map.");
-            gameThread = null; //freeze game upon win
+            endGame("You won! The player has made it to the east side of the map.");
         }
 
         //check if player has run out of food/water (loses the game)
-        if(player.foodAmount <= 0 || player.waterAmount <= 0){
-            JOptionPane.showMessageDialog(this, "You died!" +
-                    " Remember to eat well and stay hydrated!");
-            gameThread = null;
+        if(player.currentFood <= 0 || player.currentWater <= 0){
+            endGame("You died! Remember to eat well and stay hydrated!");
         }
 
+    }
+
+    private void endGame(String message) {
+        gameThread = null;
+        keyH.resetKeys();
+
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                message,
+                "Game Over",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                new String[] {"Restart"},
+                "Restart");
+
+        if (choice == 0 || choice == JOptionPane.CLOSED_OPTION) {
+            Window window = SwingUtilities.getWindowAncestor(this);
+            if (window != null) {
+                window.dispose();
+            }
+            GameLauncher.main(new String[0]);
+        }
     }
 
     //spawns items on the map
@@ -130,7 +149,7 @@ public class GamePanel extends JPanel implements Runnable{
         List<Item> generatedItems = new ArrayList<Item>();
         Random random = new Random();
         int mapArea = maxScreenCol * maxScreenRow;
-        int maxItems = Math.max(1, mapArea / 150);
+        int maxItems = Math.max(3, mapArea / 100);
 
         for (int row = 0; row < maxScreenRow && generatedItems.size() < maxItems; row++) {
             for (int col = 0; col < maxScreenCol && generatedItems.size() < maxItems; col++) {
@@ -147,7 +166,50 @@ public class GamePanel extends JPanel implements Runnable{
             }
         }
 
+        if (!hasItemType(generatedItems, Item.ItemType.GOLD)) {
+            addItemOnRandomOpenTile(generatedItems, Item.ItemType.GOLD, random);
+        }
+
         return generatedItems;
+    }
+
+    private boolean hasItemType(List<Item> generatedItems, Item.ItemType itemType) {
+        for (Item item : generatedItems) {
+            if (item.getType() == itemType) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addItemOnRandomOpenTile(List<Item> generatedItems, Item.ItemType itemType, Random random) {
+        for (int attempt = 0; attempt < maxScreenCol * maxScreenRow; attempt++) {
+            int col = random.nextInt(maxScreenCol);
+            int row = random.nextInt(maxScreenRow);
+            int tileNum = tileM.mapTileNum[col][row];
+
+            if (tileM.tile[tileNum].collision) {
+                continue;
+            }
+            if (trader.MapX / tileSize == col && trader.MapY / tileSize == row) {
+                continue;
+            }
+            if (hasItemAt(generatedItems, col, row)) {
+                continue;
+            }
+
+            generatedItems.add(new Item(col, row, itemType));
+            return;
+        }
+    }
+
+    private boolean hasItemAt(List<Item> generatedItems, int col, int row) {
+        for (Item item : generatedItems) {
+            if (item.isOnTile(col, row)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //generates a random item type
@@ -240,8 +302,8 @@ public class GamePanel extends JPanel implements Runnable{
     //helper function used in tradeInteraction to process a trade
     private void processTrade(String item, int price){
         player.goldAmount -= price;
-        if(item.equals("Food")) player.foodAmount += 30;
-        if(item.equals("Water")) player.waterAmount += 15;
+        if(item.equals("Food")) player.currentFood = Math.min(player.currentFood + 30, player.maxFood);
+        if(item.equals("Water")) player.currentWater = Math.min(player.currentWater + 15, player.maxWater);
     }
 
     //used in drawStatUI - gets the terrain the player on based on the player's center
@@ -273,9 +335,9 @@ public class GamePanel extends JPanel implements Runnable{
         int spacing = 150;
 
         //display existing stats
-        g2.drawString("Food: " + (int)player.foodAmount, 30, uiY);
-        g2.drawString("Water: " + (int)player.waterAmount, 30 + spacing, uiY);
-        g2.drawString("Strength: " + (int)player.strength, 30 + (spacing * 2), uiY);
+        g2.drawString(String.format("Food: %.1f", player.currentFood), 30, uiY);
+        g2.drawString(String.format("Water: %.1f", player.currentWater), 30 + spacing, uiY);
+        g2.drawString(String.format("Strength: %.1f", player.currentStrength), 30 + (spacing * 2), uiY);
         g2.setColor(Color.YELLOW);
         g2.drawString("Gold: " + player.goldAmount, 40 + (spacing * 3), uiY);
 

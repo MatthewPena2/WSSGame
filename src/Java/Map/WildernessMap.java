@@ -108,12 +108,20 @@ public class WildernessMap {
                 && position.getY() < height;
     }
 
+    public boolean isInBounds(Position position) {
+        return isValidPosition(position);
+    }
+
     // Returns the tile at a position, or throws if the position is invalid.
     public Tile getTile(Position position) {
         if (!isValidPosition(position)) {
             throw new IllegalArgumentException("Position is outside the map: " + position);
         }
         return tiles[position.getY()][position.getX()];
+    }
+
+    public Tile getTileAt(Position position) {
+        return getTile(position);
     }
 
     public boolean hasReachedEastEdge() {

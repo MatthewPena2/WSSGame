@@ -19,8 +19,9 @@ public class Player extends Entity{
     GamePanel gp;
     KeyHandler keyH;
     PlayerType type;
-    public double foodAmount, waterAmount, strength;
-    public int goldAmount = 30;
+    public double maxStrength,maxFood, maxWater; //max stats based on player type
+    public double currentFood, currentWater, currentStrength;
+    public int goldAmount = 0; //player starts with 0 gold
     public int speed = 0; //default speed used to traverse the map
     //The player moves in pixels
     //A speed of 3 means the player will move 3 pixels everytime an appropriate movement key is pressed
@@ -37,9 +38,13 @@ public class Player extends Entity{
 
     //Mutator method for initializing the player supplies and strength
     public void setStartingSuppliesAndStrength(){
-        foodAmount = type.getStartFood();
-        waterAmount = type.getStartWater();
-        strength = type.getStartStrength();
+        maxFood = type.getStartFood();
+        maxWater = type.getStartWater();
+        maxStrength = type.getStartStrength();
+        
+        currentFood = maxFood;
+        currentWater = maxWater;
+        currentStrength = maxStrength;
     }
 
     //Mutator method for position x, y and speed
@@ -58,6 +63,9 @@ public class Player extends Entity{
                 break;
             case WARRIOR:
                 speed = 2;  // Slower because they are "heavy" or high strength
+                break;
+            case ADVENTURER:
+                speed = 4;  // Balanced speed for versatility
                 break;
             default:
                 speed = 3;
@@ -85,7 +93,7 @@ public class Player extends Entity{
 
             //strength check - player should not be able to move if strength is 0
             //Player is forced to stop moving and rest
-            if(strength <= 0){
+            if(currentStrength <= 0){
                 System.out.println("You are too tired to move. Rest up!");
                 return;
             }
@@ -116,14 +124,14 @@ public class Player extends Entity{
 
                 //based on the tile index (terrain), lower stats accordingly
                 int tileIndex = getCurrentTileIndex();
-                foodAmount -= gp.tileM.tile[tileIndex].foodCost;
-                waterAmount -= gp.tileM.tile[tileIndex].waterCost;
-                strength -= gp.tileM.tile[tileIndex].strengthCost;
+                currentFood -= gp.tileM.tile[tileIndex].foodCost;
+                currentWater -= gp.tileM.tile[tileIndex].waterCost;
+                currentStrength -= gp.tileM.tile[tileIndex].strengthCost;
 
                 //prevent stats from going below zero
-                if(foodAmount < 0) foodAmount = 0;
-                if(waterAmount < 0) waterAmount = 0;
-                if(strength < 0) strength = 0;
+                if(currentFood < 0) currentFood = 0;
+                if(currentWater < 0) currentWater = 0;
+                if(currentStrength < 0) currentStrength = 0;
 
             }
 
@@ -134,13 +142,6 @@ public class Player extends Entity{
                 spriteCounter = 0;
             }
 
-        } else{ //the player will regain strength when they are not moving
-            if(strength < type.getStartStrength()){ //less than max
-                strength += 0.07; //slowly regain strength
-
-                //keep strength at starting cap
-                if(strength > type.getStartStrength()) strength = type.getStartStrength();
-            }
         }
 
     }

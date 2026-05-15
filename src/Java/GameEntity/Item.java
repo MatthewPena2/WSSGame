@@ -30,6 +30,10 @@ public class Item {
         return mapCol == col && mapRow == row;
     }
 
+    public ItemType getType() {
+        return type;
+    }
+
     public void collect(Player player) {
         if (collected) {
             return;
@@ -37,10 +41,10 @@ public class Item {
 
         switch (type) {
             case FOOD:
-                player.foodAmount += 10;
+                player.currentFood = Math.min(player.currentFood + 30, player.maxFood);
                 break;
             case WATER:
-                player.waterAmount += 15;
+                player.currentWater = Math.min(player.currentWater + 15, player.maxWater);
                 break;
             case GOLD:
                 player.goldAmount += 5;
