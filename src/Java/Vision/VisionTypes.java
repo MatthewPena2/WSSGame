@@ -40,7 +40,7 @@ class FocusedVision extends Vision {
      * @param playerLocation    The current location of the player
      */
     @Override
-    protected void updateScope(Position playerLocation) {
+    public void updateScope(Position playerLocation) {
         scope = resolveScope(playerLocation, DIRECTIONS, RANGE);
     }
 }
@@ -80,7 +80,7 @@ class CautiousVision extends Vision {
      * @param playerLocation    The current location of the player
      */
     @Override
-    protected void updateScope(Position playerLocation) {
+    public void updateScope(Position playerLocation) {
         scope = resolveScope(playerLocation, DIRECTIONS, RANGE);
     }
 }
@@ -121,7 +121,7 @@ class KeenEyedVision extends Vision {
      * @params playerLocation   The current location of the player
      */
     @Override
-    protected void updateScope(Position playerLocation) {
+    public void updateScope(Position playerLocation) {
         scope = resolveScope(playerLocation, DIRECTIONS, RANGE);
     }
 }
@@ -166,7 +166,7 @@ class HindSightVision extends Vision {
      * @param playerLocation    The current location of the player
      */
     @Override
-    protected void updateScope(Position playerLocation) {
+    public void updateScope(Position playerLocation) {
         Tile[] behind = resolveScope(playerLocation, BEHIND, 2);  // 2 tiles west arc
         Tile[] ahead  = resolveScope(playerLocation, AHEAD,  1);  // 1 tile east
 

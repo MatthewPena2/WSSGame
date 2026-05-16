@@ -62,26 +62,26 @@ public class WildernessMapManager {
 
             //Initialize the movement costs for each tile
 
-            // tile[0] = plains
-            tile[0].foodCost = 0.02;
-            tile[0].waterCost = 0.01;
-            tile[0].strengthCost = 0.01;
+            // tile[0] = plains - default penalties
+            tile[0].foodCost = 0.02; //base
+            tile[0].waterCost = 0.01; //base
+            tile[0].strengthCost = 0.01; //base
 
-            // tile[1] = desert
-            tile[1].foodCost = 0.03;
-            tile[1].waterCost = 0.05;
-            tile[1].strengthCost = 0.03;
+            // tile[1] = desert - more aggressive penalties
+            tile[1].foodCost = 0.04; //x2 base
+            tile[1].waterCost = 0.05; //x5 base
+            tile[1].strengthCost = 0.03; //x3 base
 
-            // tile[2] = forest
-            tile[2].foodCost = 0.04;
-            tile[2].waterCost = 0.02;
-            tile[2].strengthCost = 0.04;
+            // tile[2] = forest - more food and strength intensive
+            tile[2].foodCost = 0.06; //x3 base
+            tile[2].waterCost = 0.03; //x3 base
+            tile[2].strengthCost = 0.04; //x4 base
             // tile[3] = mountain - impassable terrain with collision
 
-            //tile[4] = water
-            tile[4].foodCost = 0.04;
-            tile[4].waterCost = 0.01;
-            tile[4].strengthCost = 0.03;
+            //tile[4] = water - more food and strength intensive
+            tile[4].foodCost = 0.05; //x5
+            tile[4].waterCost = 0.01; //x1
+            tile[4].strengthCost = 0.05; //x5
 
 
         }catch(IOException e){

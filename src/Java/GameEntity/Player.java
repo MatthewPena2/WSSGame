@@ -1,7 +1,13 @@
 package GameEntity;
 
+import Brain.DefaultBrain;
 import GameDisplay.GamePanel;
 import GameDisplay.KeyHandler;
+import Map.Direction;
+import Map.Position;
+import Vision.VisionManager;
+import Vision.Vision;
+import Brain.Brain;
 
 
 import javax.imageio.ImageIO;
@@ -16,9 +22,12 @@ public class Player extends Entity{
     //to update its position in the window
 
     //DECLARE VARIABLES
-    GamePanel gp;
+    public GamePanel gp;
     KeyHandler keyH;
     PlayerType type;
+    private Brain brain;
+    private Vision playerVision;
+    public boolean automaticMode;
     public double maxStrength,maxFood, maxWater; //max stats based on player type
     public double currentFood, currentWater, currentStrength;
     public int goldAmount = 0; //player starts with 0 gold
@@ -26,14 +35,22 @@ public class Player extends Entity{
     //The player moves in pixels
     //A speed of 3 means the player will move 3 pixels everytime an appropriate movement key is pressed
 
-    public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType){
+    public Player(GamePanel panel, KeyHandler kHandle, PlayerType selectedType, boolean isAuto){
         gp = panel; //pass the game panel
         keyH = kHandle; //pass the key handler
         this.type = selectedType; //pass the selected player type
+        this.automaticMode = isAuto;
         setStartingSuppliesAndStrength(); //initiate the player supplies
         setDefaultPositionAndSpeed(); //set Player default position on the map and their speed
         getPlayerImages(); //get player pixel art
-        hitbox = new Rectangle(8, 16, 32, 32);
+
+        Position gridPos = new Position(MapX/gp.tileSize, MapY/ gp.tileSize);
+        this.playerVision = VisionManager.create(type.getVision(), gridPos, gp.worldMap);
+        if(this.automaticMode){
+            this.brain = new DefaultBrain(this, this.playerVision);
+        }
+
+        hitbox = new Rectangle(8, 16, 28, 28);
     }
 
     //Mutator method for initializing the player supplies and strength
@@ -87,8 +104,63 @@ public class Player extends Entity{
 
     //Update position
     public void update(){
+
+        if(automaticMode && brain != null){
+            Direction move = brain.makeMove();
+
+            if (move == Direction.NORTH) direction = "up";
+            if (move == Direction.SOUTH) direction = "down";
+            if (move == Direction.WEST)  direction = "left";
+            if (move == Direction.EAST)  direction = "right";
+        }else{
+            if(keyH.pressedUp){
+                direction = "up";
+            }else if(keyH.pressedDown){
+                direction = "down";
+            }else if(keyH.pressedLeft){
+                direction = "left";
+            }else if(keyH.pressedRight){
+                direction = "right";
+            }else{
+                return;
+            }
+        }
+
+        //Check the tile collision
+        collisionOn = false;
+        gp.collChecker.checkTileCollision(this);
+
+        //if collision is false, the player can move; if on, the player cannot move
+        if(!collisionOn){
+            switch(direction){ //only allow the player to move when collision is off
+                case "up": MapY -= speed; break;
+                case "down": MapY += speed; break;
+                case "right": MapX += speed; break;
+                case "left": MapX -= speed; break;
+            }
+
+            //based on the tile index (terrain), lower stats accordingly
+            int tileIndex = getCurrentTileIndex();
+            currentFood -= gp.tileM.tile[tileIndex].foodCost;
+            currentWater -= gp.tileM.tile[tileIndex].waterCost;
+            currentStrength -= gp.tileM.tile[tileIndex].strengthCost;
+
+            //prevent stats from going below zero
+            if(currentFood < 0) currentFood = 0;
+            if(currentWater < 0) currentWater = 0;
+            if(currentStrength < 0) currentStrength = 0;
+
+        }
+
+        spriteCounter++;
+        if(spriteCounter > 12){ //update sprite every 12 frames
+            if(spriteNumber == 1) spriteNumber = 2;
+            else if(spriteNumber == 2) spriteNumber = 1;
+            spriteCounter = 0;
+        }
+
         //if WASD is pressed (up, left, down, right), then manage player movement
-        if(keyH.pressedUp || keyH.pressedDown
+        /*if(keyH.pressedUp || keyH.pressedDown
             || keyH.pressedLeft || keyH.pressedRight){
 
             //strength check - player should not be able to move if strength is 0
@@ -143,6 +215,8 @@ public class Player extends Entity{
             }
 
         }
+
+         */
 
     }
 

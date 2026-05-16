@@ -1,6 +1,8 @@
 package GameDisplay;
 
 import GameEntity.*;
+import Map.Difficulty;
+import Map.WildernessMap;
 import TileMap.WildernessMapManager;
 
 import javax.swing.*;
@@ -36,6 +38,7 @@ public class GamePanel extends JPanel implements Runnable{
     //Collision Checker (for terrain/trader)
     public final CollisionChecker collChecker;
     //Map Manager
+    public WildernessMap worldMap;
     public final WildernessMapManager tileM;
     //Key Handler Object
     KeyHandler keyH;
@@ -47,11 +50,16 @@ public class GamePanel extends JPanel implements Runnable{
     public Trader trader;
     //Create item collection
     public List<Item> items;
+    public boolean isAutomaticMode;
 
     //GamePanel constructor - initializes all variables declared above, and then some
-    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows){
+    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows, boolean isAuto){
         this.maxScreenCol = Math.max(MIN_MAP_COLUMNS, mapColumns);
         this.maxScreenRow = Math.max(MIN_MAP_ROWS, mapRows);
+        this.isAutomaticMode = isAuto;
+
+        this.worldMap = new WildernessMap(mapColumns, mapRows, Difficulty.EASY);
+
         this.screenWidth = tileSize * maxScreenCol;
         this.screenHeight = (tileSize * maxScreenRow) + statUIHeight;
         this.collChecker = new CollisionChecker(this);
@@ -59,7 +67,7 @@ public class GamePanel extends JPanel implements Runnable{
         this.keyH = new KeyHandler(); //KeyHandler to manage user input for player action
         this.trader = new Trader(this); //initialize new trader
         this.items = spawnItems(); //initialize map items
-        this.player = new Player(this, keyH, selectedType); //create player object based on the chosen player type
+        this.player = new Player(this, keyH, selectedType, isAuto); //create player object based on the chosen player type
         this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
         this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
         this.setDoubleBuffered(true); //all drawing/redrawing is done in a separate buffer (improves rendering performance)

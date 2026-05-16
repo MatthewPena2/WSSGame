@@ -1,4 +1,4 @@
-C:\Users\mreye\Documents\GitHub\WSSGame\src\Java\Brain.java
+C:\Users\mreye\Documents\GitHub\WSSGame\src\Java\Brain.Brain.java
 C:\Users\mreye\Documents\GitHub\WSSGame\src\Java\GameDisplay\CollisionChecker.java
 C:\Users\mreye\Documents\GitHub\WSSGame\src\Java\GameDisplay\GameLauncher.java
 C:\Users\mreye\Documents\GitHub\WSSGame\src\Java\GameDisplay\GamePanel.java
