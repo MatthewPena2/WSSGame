@@ -136,7 +136,7 @@ public abstract class Vision {
      *
      * @param playerLocation    The current player location
      */
-    protected abstract void updateScope(Position playerLocation);
+    public abstract void updateScope(Position playerLocation);
 
 
     // --------------------- PLAYER STATE ACCESS ---------------------

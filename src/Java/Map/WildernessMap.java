@@ -1,5 +1,9 @@
 package Map;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -8,12 +12,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-// Owns the generated map grid, player position, tile resources, and biome generation logic.
+// Owns the generated map grid, player position, and biome generation logic.
 public class WildernessMap {
     public static final int MILES_PER_TILE = 5;
 
@@ -53,7 +53,7 @@ public class WildernessMap {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Position position = new Position(x, y);
-                tiles[y][x] = generateTile(position, biomeLayout[y][x]);
+                tiles[y][x] = new Tile(position, biomeLayout[y][x]);
             }
         }
     }
@@ -108,6 +108,10 @@ public class WildernessMap {
                 && position.getY() < height;
     }
 
+    public boolean isInBounds(Position position) {
+        return isValidPosition(position);
+    }
+
     // Returns the tile at a position, or throws if the position is invalid.
     public Tile getTile(Position position) {
         if (!isValidPosition(position)) {
@@ -116,26 +120,8 @@ public class WildernessMap {
         return tiles[position.getY()][position.getX()];
     }
 
-    // Safe tile lookup used by helper systems that may query outside the map.
     public Tile getTileAt(Position position) {
-        if (!isValidPosition(position)) {
-            return null;
-        }
-        return tiles[position.getY()][position.getX()];
-    }
-
-    // Alias used by other systems that need a simple boundary check.
-    public boolean isInBounds(Position position) {
-        return isValidPosition(position);
-    }
-
-    // Restores repeating food/water sources on tiles that regenerate.
-    public void resetRepeatingBonuses() {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                tiles[y][x].resetRepeating();
-            }
-        }
+        return getTile(position);
     }
 
     public boolean hasReachedEastEdge() {
@@ -210,7 +196,7 @@ public class WildernessMap {
         }
     }
 
-    // Builds the high-level biome layout before concrete tiles and resources are created.
+    // Builds the high-level biome layout before concrete tiles are created.
     private Terrain[][] generateBiomeLayout() {
         Terrain[][] layout = new Terrain[height][width];
         EnumMap<Terrain, Integer> targetCounts = buildTargetCounts();
@@ -656,9 +642,6 @@ public class WildernessMap {
     }
 
     private boolean canPlaceMountain(Terrain[][] layout, Position position) {
-        if (position.getX() == 0) {
-            return false;
-        }
         Terrain terrain = layout[position.getY()][position.getX()];
         if (terrain == Terrain.RIVER || terrain == Terrain.MOUNTAIN) {
             return false;
@@ -986,95 +969,5 @@ public class WildernessMap {
             return minInclusive;
         }
         return minInclusive + random.nextInt(maxInclusive - minInclusive + 1);
-    }
-
-    private Terrain randomTerrain() {
-        double roll = random.nextDouble();
-
-        switch (difficulty) {
-            case EASY:
-                return selectTerrain(roll, 0.40, 0.70, 0.85, 0.95);
-            case MEDIUM:
-                return selectTerrain(roll, 0.25, 0.50, 0.70, 0.85);
-            case HARD:
-                return selectTerrain(roll, 0.15, 0.35, 0.55, 0.75);
-            default:
-                throw new IllegalStateException("Unsupported difficulty: " + difficulty);
-        }
-    }
-
-    private Terrain selectTerrain(
-            double roll,
-            double plainsThreshold,
-            double forestThreshold,
-            double desertThreshold,
-            double riverThreshold) {
-        if (roll < plainsThreshold) {
-            return Terrain.PLAINS;
-        }
-        if (roll < forestThreshold) {
-            return Terrain.FOREST;
-        }
-        if (roll < desertThreshold) {
-            return Terrain.DESERT;
-        }
-        if (roll < riverThreshold) {
-            return Terrain.RIVER;
-        }
-        return Terrain.MOUNTAIN;
-    }
-
-    private Tile generateTile(Position position, Terrain terrain) {
-        double scale = difficultyScale();
- 
-        // Food
-        boolean hasFood = random.nextDouble() < baseFoodChance(terrain) * scale;
-        boolean foodRep = hasFood && terrain == Terrain.PLAINS && random.nextBoolean();
- 
-        // Water — rivers always give repeating water
-        boolean waterRep = (terrain == Terrain.RIVER);
-        boolean hasWater = waterRep || random.nextDouble() < baseWaterChance(terrain) * scale;
- 
-        // Gold — rare, never repeating
-        boolean hasGold = random.nextDouble() < 0.04 * scale;
- 
-        // Trader — rare, always repeating (stays in their square)
-        boolean hasTrader = random.nextDouble() < 0.03 * scale;
- 
-        return new Tile(position, terrain,
-                        hasFood,  foodRep,
-                        hasWater, waterRep,
-                        hasGold,
-                        hasTrader);
-    }
- 
-    private double baseFoodChance(Terrain terrain) {
-        switch (terrain) {
-            case PLAINS:   return 0.20;
-            case FOREST:   return 0.25;
-            case DESERT:   return 0.05;
-            case RIVER:    return 0.15;
-            case MOUNTAIN: return 0.08;
-            default:       return 0.10;
-        }
-    }
- 
-    private double baseWaterChance(Terrain terrain) {
-        switch (terrain) {
-            case PLAINS:   return 0.08;
-            case FOREST:   return 0.12;
-            case DESERT:   return 0.03;
-            case MOUNTAIN: return 0.10;
-            default:       return 0.05;
-        }
-    }
- 
-    private double difficultyScale() {
-        switch (difficulty) {
-            case EASY:   return 1.0;
-            case MEDIUM: return 0.7;
-            case HARD:   return 0.4;
-            default:     return 1.0;
-        }
     }
 }

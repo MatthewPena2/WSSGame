@@ -1,0 +1,380 @@
+package GameDisplay;
+
+import GameEntity.*;
+import Map.Difficulty;
+import Map.WildernessMap;
+import TileMap.WildernessMapManager;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+//GamePanel class operates like a game manger
+//This class is responsible for handling in-game interactions, player movement, screen display (pop-ups and draw), etc.
+public class GamePanel extends JPanel implements Runnable{
+    private static final int MIN_MAP_COLUMNS = 5;
+    private static final int MIN_MAP_ROWS = 5;
+
+    //Display settings
+    final int tileSizeInPixels = 16; //each tile, player icon, item, entity, etc. will be 16 by 16 pixels
+    final int tileSizeScale = 3; //blows up the tile image to make it bigger on screen
+
+    public final int tileSize = tileSizeInPixels * tileSizeScale; //16 * 3 = 48; 48 by 48
+    public final int maxScreenCol; //dynamic map width in tiles
+    public final int maxScreenRow; //dynamic map height in tiles
+    public final int statUIHeight = tileSize * 2; //space dedicated to stat screen
+    public final int screenWidth; //width is in pixels displayed on screen
+    public final int screenHeight; //height is in pixels displayed on screen
+    public boolean canTrade = true; //used to determine trading cooldowns
+    //When it comes to drawing on a screen, the game panel will be using the player's position in pixels
+    private long lastTime, currentTime; //used in run() to determine update() time interval
+
+    //FPS Cap = 60 FPS
+    //used to tell the game panel how many times per second to update the display window (calling update()/repaint())
+    int FPS = 60;
+
+    //Collision Checker (for terrain/trader)
+    public final CollisionChecker collChecker;
+    //Map Manager
+    public WildernessMap worldMap;
+    public final WildernessMapManager tileM;
+    //Key Handler Object
+    KeyHandler keyH;
+    //gameThread thread is going to manage the uptime of the game (when the game is active)
+    Thread gameThread;
+    //Create the player object
+    private final Player player;
+    //Create new trader object
+    public Trader trader;
+    //Create item collection
+    public List<Item> items;
+    public boolean isAutomaticMode;
+    public Difficulty selectedDifficulty;
+
+    //GamePanel constructor - initializes all variables declared above, and then some
+    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows, boolean isAuto, Difficulty selectedD){
+        this.maxScreenCol = Math.max(MIN_MAP_COLUMNS, mapColumns);
+        this.maxScreenRow = Math.max(MIN_MAP_ROWS, mapRows);
+
+        this.selectedDifficulty = selectedD;
+        this.isAutomaticMode = isAuto;
+        this.worldMap = new WildernessMap(mapColumns, mapRows, Difficulty.EASY);
+
+        this.screenWidth = tileSize * maxScreenCol;
+        this.screenHeight = (tileSize * maxScreenRow) + statUIHeight;
+        this.collChecker = new CollisionChecker(this);
+        this.tileM = new WildernessMapManager(this);
+        this.keyH = new KeyHandler(); //KeyHandler to manage user input for player action
+        this.trader = new Trader(this); //initialize new trader
+        this.items = spawnItems(); //initialize map items
+        this.player = new Player(this, keyH, selectedType, isAuto); //create player object based on the chosen player type
+        this.setPreferredSize(new Dimension(screenWidth, screenHeight)); //creates a window of width pixels by height pixels
+        this.setBackground(Color.LIGHT_GRAY); //TEMPORARY game window color
+        this.setDoubleBuffered(true); //all drawing/redrawing is done in a separate buffer (improves rendering performance)
+        this.addKeyListener(keyH); //listens for user input from keyboard
+        this.setFocusable(true); //GamePanel will focus on receiving keyboard input; POTENTIALLY REMOVE LATER
+    }
+
+    public void startGameThread(){
+        gameThread = new Thread(this); //thread will be running this panel, which has the game loop
+        gameThread.start(); //.start() will call run(), which is the game loop
+    }
+    //automatically included when implementing Runnable class; called to execute the game loop
+    @Override
+    public void run() {
+        //This game loop will accomplish two things:
+        //1. Updating player position
+        //2. Redrawing the game as it receives new information
+
+        //Drawing Intervals - We only want the game drawing at 60 FPS
+        //if we leave it as the system default, the player marker will move too fast
+        double drawInterval = 1000000000/FPS;
+        double delta = 0;
+        lastTime = System.nanoTime();
+
+        while(gameThread != null){ //as long as this game thread exists, execute the loop
+            currentTime = System.nanoTime();
+
+            delta += (currentTime - lastTime)/drawInterval;
+            lastTime = currentTime;
+
+            if(delta >= 1){
+                update();
+                repaint(); //calls paintComponent
+                delta--;
+            }
+        }
+    }
+
+    //used in run()
+    private void update(){
+        //call player update() to update movement
+        player.update();
+
+        //check if player has collected an item
+        collectItemsAtPlayer();
+
+        //check if a trade interaction is happening
+        tradeInteraction();
+
+        //check if player has reached the right-hand side of the screen (wins the game)
+        if(player.MapX + tileSize >= screenWidth){
+            endGame("You won! The player has made it to the east side of the map.");
+        }
+
+        //check if player has run out of food/water (loses the game)
+        if(player.currentFood <= 0 || player.currentWater <= 0){
+            endGame("You died! Remember to eat well and stay hydrated!");
+        }
+
+    }
+
+    private void endGame(String message) {
+        gameThread = null;
+        keyH.resetKeys();
+
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                message,
+                "Game Over",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                new String[] {"Restart"},
+                "Restart");
+
+        if (choice == 0 || choice == JOptionPane.CLOSED_OPTION) {
+            Window window = SwingUtilities.getWindowAncestor(this);
+            if (window != null) {
+                window.dispose();
+            }
+            GameLauncher.main(new String[0]);
+        }
+    }
+
+    //spawns items on the map
+    private List<Item> spawnItems() {
+        List<Item> generatedItems = new ArrayList<Item>();
+        Random random = new Random();
+        int mapArea = maxScreenCol * maxScreenRow;
+        int maxItems = Math.max(3, mapArea / 100);
+
+        for (int row = 0; row < maxScreenRow && generatedItems.size() < maxItems; row++) {
+            for (int col = 0; col < maxScreenCol && generatedItems.size() < maxItems; col++) {
+                int tileNum = tileM.mapTileNum[col][row];
+                if (tileM.tile[tileNum].collision) {
+                    continue;
+                }
+                if (trader.MapX / tileSize == col && trader.MapY / tileSize == row) {
+                    continue;
+                }
+                if (random.nextDouble() < 0.1) {
+                    generatedItems.add(new Item(col, row, randomItemType(random)));
+                }
+            }
+        }
+
+        if (!hasItemType(generatedItems, Item.ItemType.GOLD)) {
+            addItemOnRandomOpenTile(generatedItems, Item.ItemType.GOLD, random);
+        }
+
+        return generatedItems;
+    }
+
+    private boolean hasItemType(List<Item> generatedItems, Item.ItemType itemType) {
+        for (Item item : generatedItems) {
+            if (item.getType() == itemType) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addItemOnRandomOpenTile(List<Item> generatedItems, Item.ItemType itemType, Random random) {
+        for (int attempt = 0; attempt < maxScreenCol * maxScreenRow; attempt++) {
+            int col = random.nextInt(maxScreenCol);
+            int row = random.nextInt(maxScreenRow);
+            int tileNum = tileM.mapTileNum[col][row];
+
+            if (tileM.tile[tileNum].collision) {
+                continue;
+            }
+            if (trader.MapX / tileSize == col && trader.MapY / tileSize == row) {
+                continue;
+            }
+            if (hasItemAt(generatedItems, col, row)) {
+                continue;
+            }
+
+            generatedItems.add(new Item(col, row, itemType));
+            return;
+        }
+    }
+
+    private boolean hasItemAt(List<Item> generatedItems, int col, int row) {
+        for (Item item : generatedItems) {
+            if (item.isOnTile(col, row)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //generates a random item type
+    private Item.ItemType randomItemType(Random random) {
+        double roll = random.nextDouble();
+        if (roll < 0.30) {
+            return Item.ItemType.FOOD;
+        }
+        if (roll < 0.60) {
+            return Item.ItemType.WATER;
+        }
+        return Item.ItemType.GOLD;
+    }
+
+    //calls item class to collect the item and add stats to the player
+    private void collectItemsAtPlayer() {
+        int centerX = player.MapX + (tileSize / 2);
+        int centerY = player.MapY + (tileSize / 2);
+        int col = centerX / tileSize;
+        int row = centerY / tileSize;
+
+        for (Item item : items) {
+            if (!item.isCollected() && item.isOnTile(col, row)) {
+                item.collect(player);
+            }
+        }
+    }
+
+    //used in update() - game keeps checking if a trade interaction has occurred
+    private void tradeInteraction(){
+        int objIndex = collChecker.checkObjectCollision(player, trader);
+        if(objIndex != -1 && canTrade){
+            canTrade = false; //set trade cooldown
+            keyH.resetKeys(); //stop all player movement when trading
+
+            //Define choices for Trade (ask player what they want to buy)
+            String[] items = {"Food", "Water", "Leave"};
+
+            int itemChoice = JOptionPane.showOptionDialog(this, "Trader: What do you need?",
+                    "Trade", 0, JOptionPane.QUESTION_MESSAGE, null, items, items[0]);
+
+            if(itemChoice == 0 || itemChoice == 1){
+                String selectedItem = items[itemChoice];
+
+                //Ask player for gold
+                String input = JOptionPane.showInputDialog(this,
+                        "Trader: What are you offering for " + selectedItem + "?");
+
+                if(input != null){
+                    try{
+                        //Evaluate player offer
+                        int offer = Integer.parseInt(input);
+
+                        //Logic Path A: Player cannot afford a trade
+                        if(offer > player.goldAmount) JOptionPane.showMessageDialog(this, "Trader: You're broke. Leave!");
+                            //Logic Path B: Trade Accepted
+                        else if(trader.evaluateOffer(selectedItem, offer)){
+                            processTrade(selectedItem, offer);
+                            JOptionPane.showMessageDialog(this, "Trader: Deal!");
+                        }
+                        //Logic Path C: Counteroffer (once)
+                        else{
+                            int counter = trader.getCounterOffer(selectedItem);
+                            int response = JOptionPane.showConfirmDialog(this,
+                                    "Trader: Seriously? I'll accept at least " + counter + " gold. Do we have a deal?",
+                                    "Counteroffer", JOptionPane.YES_NO_OPTION);
+                            //Logic Path C1: Counter accepted
+                            if(response == JOptionPane.YES_OPTION && player.goldAmount >= counter){
+                                processTrade(selectedItem, counter);
+                                JOptionPane.showMessageDialog(this, "Trader: Good choice.");
+                            }else{ //Logic Path C2: Counter rejected/player kicked out
+                                JOptionPane.showMessageDialog(this, "Trader: Get lost.");
+                            }
+                        }
+
+                    }catch(NumberFormatException e){
+                        JOptionPane.showMessageDialog(this, "Speak clearly (enter a number)");
+                    }
+                }
+            }
+            lastTime = System.nanoTime(); //reset lastTime for run()
+            // FIXES bug where update() tries to catch up after time spent in trade
+            trader.type = TraderType.values()[new Random().nextInt(TraderType.values().length)]; //choose a rand trader type
+            trader.spawnRandomly(); //move trader after interaction to force players to move again
+        }
+
+        if(objIndex == -1) canTrade = true; //rest trade cooldown when player leaves trader hitbox
+    }
+
+    //helper function used in tradeInteraction to process a trade
+    private void processTrade(String item, int price){
+        player.goldAmount -= price;
+        if(item.equals("Food")) player.currentFood = Math.min(player.currentFood + 30, player.maxFood);
+        if(item.equals("Water")) player.currentWater = Math.min(player.currentWater + 15, player.maxWater);
+    }
+
+    //used in drawStatUI - gets the terrain the player on based on the player's center
+    private String getCurrentTerrain(){
+        //Calculate the center of the player
+        int centerX = player.MapX + (tileSize/2);
+        int centerY = player.MapY + (tileSize/2);
+
+        //Convert the pixel coordinates into array indices
+        //The map is simply an array of integers corresponding to Tile types
+        int col = centerX / tileSize;
+        int row = centerY / tileSize;
+
+        //In-bounds safety check
+        if(col >= 0 && col < maxScreenCol && row >= 0 && row < maxScreenRow){
+            //get the tile number of the tile at [col][row] - tileNumber = type of terrain (0 = Plains, 1 = Desert, etc.)
+            int tileNum = tileM.mapTileNum[col][row];
+            return tileM.tile[tileNum].name; //return the name of the terrain associated with that tile number
+        }
+        return "Unknown"; //if above check fails, return "Unknown"
+    }
+
+    //used in paintComponent to display player stats at the bottom of the screen
+    private void drawStatUI(Graphics2D g2){
+        g2.setColor(Color.black);
+        g2.setFont(new Font("Arial", Font.BOLD, 20));
+
+        int uiY = (tileSize * maxScreenRow) + statUIHeight/2;
+        int spacing = 150;
+
+        //display existing stats
+        g2.drawString(String.format("Food: %.1f", player.currentFood), 30, uiY);
+        g2.drawString(String.format("Water: %.1f", player.currentWater), 30 + spacing, uiY);
+        g2.drawString(String.format("Strength: %.1f", player.currentStrength), 30 + (spacing * 2), uiY);
+        g2.setColor(Color.YELLOW);
+        g2.drawString("Gold: " + player.goldAmount, 45 + (spacing * 3), uiY);
+
+        //Display the current terrain
+        g2.setColor(Color.black);
+        g2.drawString("Terrain: " + getCurrentTerrain(), 30 + (spacing * 4), uiY);
+    }
+
+    //used in run()
+    //Basically overriding JPanel paintComponent() to redraw the game; called using repaint();
+    public void paintComponent(Graphics g){ //uses Graphics
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D)g; //cast g as a Graphics2D variable (Graphics2D has more components than Graphics)
+        //call map manager
+        tileM.draw(g2);
+        //draw collectible items as colored tile-corner markers
+        for (Item item : items) {
+            item.draw(g2, tileSize);
+        }
+        //call trader drawTrader() to draw trader on the panel
+        trader.drawTrader(g2);
+        //call player draw() to draw player on the panel
+        player.draw(g2);
+        //call drawStatUI() to display the player's resources
+        drawStatUI(g2);
+
+        g2.dispose(); //when drawing is done, release any resources being used up
+    }
+
+}

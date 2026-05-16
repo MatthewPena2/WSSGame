@@ -95,7 +95,7 @@ public class Path {
     /**
      * Returns the first movement direction in the path.
      *
-     * This is used by the Brain system to execute movement step-by-step
+     * This is used by the Brain.Brain system to execute movement step-by-step
      * rather than committing to the full path at once.
      *
      * @return  The first direction in the path, or null if the path is empty
