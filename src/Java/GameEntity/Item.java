@@ -47,7 +47,7 @@ public class Item {
                 player.currentWater = Math.min(player.currentWater + 15, player.maxWater);
                 break;
             case GOLD:
-                player.goldAmount += 5;
+                player.goldAmount += 20;
                 break;
         }
 

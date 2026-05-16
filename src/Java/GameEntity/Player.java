@@ -105,14 +105,22 @@ public class Player extends Entity{
     //Update position
     public void update(){
 
-        if(automaticMode && brain != null){
+        //strength check - player should not be able to move if strength is 0
+        //Player is forced to stop moving and rest
+        if(currentStrength <= 0){
+            System.out.println("You are too tired to move. Rest up!");
+            return;
+        }
+
+        if(automaticMode && brain != null){ //if on automatic mode, player is controlled by the Brain
             Direction move = brain.makeMove();
 
             if (move == Direction.NORTH) direction = "up";
             if (move == Direction.SOUTH) direction = "down";
             if (move == Direction.WEST)  direction = "left";
             if (move == Direction.EAST)  direction = "right";
-        }else{
+
+        }else{  //if WASD is pressed (up, left, down, right), then manage player movement
             if(keyH.pressedUp){
                 direction = "up";
             }else if(keyH.pressedDown){
@@ -158,66 +166,6 @@ public class Player extends Entity{
             else if(spriteNumber == 2) spriteNumber = 1;
             spriteCounter = 0;
         }
-
-        //if WASD is pressed (up, left, down, right), then manage player movement
-        /*if(keyH.pressedUp || keyH.pressedDown
-            || keyH.pressedLeft || keyH.pressedRight){
-
-            //strength check - player should not be able to move if strength is 0
-            //Player is forced to stop moving and rest
-            if(currentStrength <= 0){
-                System.out.println("You are too tired to move. Rest up!");
-                return;
-            }
-
-            //manage player movement
-            if(keyH.pressedUp){
-                direction = "up";
-            }else if(keyH.pressedDown){
-                direction = "down";
-            }else if(keyH.pressedLeft){
-                direction = "left";
-            }else {
-                direction = "right";
-            }
-
-            //Check the tile collision
-            collisionOn = false;
-            gp.collChecker.checkTileCollision(this);
-
-            //if collision is false, the player can move; if on, the player cannot move
-            if(!collisionOn){
-                switch(direction){ //only allow the player to move when collision is off
-                    case "up": MapY -= speed; break;
-                    case "down": MapY += speed; break;
-                    case "right": MapX += speed; break;
-                    case "left": MapX -= speed; break;
-                }
-
-                //based on the tile index (terrain), lower stats accordingly
-                int tileIndex = getCurrentTileIndex();
-                currentFood -= gp.tileM.tile[tileIndex].foodCost;
-                currentWater -= gp.tileM.tile[tileIndex].waterCost;
-                currentStrength -= gp.tileM.tile[tileIndex].strengthCost;
-
-                //prevent stats from going below zero
-                if(currentFood < 0) currentFood = 0;
-                if(currentWater < 0) currentWater = 0;
-                if(currentStrength < 0) currentStrength = 0;
-
-            }
-
-            spriteCounter++;
-            if(spriteCounter > 12){ //update sprite every 12 frames
-                if(spriteNumber == 1) spriteNumber = 2;
-                else if(spriteNumber == 2) spriteNumber = 1;
-                spriteCounter = 0;
-            }
-
-        }
-
-         */
-
     }
 
     //Get the pixel art for the player

@@ -49,7 +49,7 @@ public class GameLauncher {
                 frame.dispose(); // Close selection window
 
                 GameWindow gameWindow = new GameWindow();
-                gameWindow.startGame(selected, mapWidth, mapHeight, isAuto); //call game window to start game (with selections)
+                gameWindow.startGame(selected, mapWidth, mapHeight, isAuto, selectedDifficulty); //call game window to start game (with selections)
             } catch (IOException ioException) {
                 JOptionPane.showMessageDialog(
                         frame,

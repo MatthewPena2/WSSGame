@@ -51,13 +51,15 @@ public class GamePanel extends JPanel implements Runnable{
     //Create item collection
     public List<Item> items;
     public boolean isAutomaticMode;
+    public Difficulty selectedDifficulty;
 
     //GamePanel constructor - initializes all variables declared above, and then some
-    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows, boolean isAuto){
+    public GamePanel(PlayerType selectedType, int mapColumns, int mapRows, boolean isAuto, Difficulty selectedD){
         this.maxScreenCol = Math.max(MIN_MAP_COLUMNS, mapColumns);
         this.maxScreenRow = Math.max(MIN_MAP_ROWS, mapRows);
-        this.isAutomaticMode = isAuto;
 
+        this.selectedDifficulty = selectedD;
+        this.isAutomaticMode = isAuto;
         this.worldMap = new WildernessMap(mapColumns, mapRows, Difficulty.EASY);
 
         this.screenWidth = tileSize * maxScreenCol;
@@ -347,7 +349,7 @@ public class GamePanel extends JPanel implements Runnable{
         g2.drawString(String.format("Water: %.1f", player.currentWater), 30 + spacing, uiY);
         g2.drawString(String.format("Strength: %.1f", player.currentStrength), 30 + (spacing * 2), uiY);
         g2.setColor(Color.YELLOW);
-        g2.drawString("Gold: " + player.goldAmount, 40 + (spacing * 3), uiY);
+        g2.drawString("Gold: " + player.goldAmount, 45 + (spacing * 3), uiY);
 
         //Display the current terrain
         g2.setColor(Color.black);
